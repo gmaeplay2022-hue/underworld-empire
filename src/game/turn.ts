@@ -16,9 +16,9 @@ export function advanceDay(world:WorldState):TurnResult{
  const playerStats={...current,cash,reputation:clamp(current.reputation+(controlled.length?1:0)),trust:clamp(current.trust+(current.cash>=upkeep?1:-2)),publicPressure:clamp(current.publicPressure+(controlled.some(d=>d.stability<42)?2:-1))};
  const districts=world.districts.map(d=>({...d,influences:{...d.influences}}));const factions=world.factions.map(f=>({...f}));let relationships=[...world.relationships];let people=world.people.map(p=>({...p,age:p.age+(day%365===0?1:0),health:clamp(p.health-(day%30===0?1:0))}));const generatedEvents:WorldEvent[]=[];
  for(const faction of factions.filter(f=>f.id!=="player")){
-  const target=districts.filter(d=>d.status!=="controlled"||d.controllerId===faction.id).sort((a,b)=>(a.influences[faction.id]??0)-(b.influences[faction.id]??0))[0];
+  const target=districts.filter(d=>d.status!=="controlled"||d.controllerId===faction.id||(d.controllerId==="player"&&relationScore({...world,relationships},faction.id,"player")<=-30)).sort((a,b)=>(a.influences[faction.id]??0)-(b.influences[faction.id]??0))[0];
   if(target){const drift=1+((world.seed+day*11+faction.id.length*7+target.id.length)%3);target.influences[faction.id]=clamp((target.influences[faction.id]??0)+drift);
-   if(target.controllerId===null&&target.influences[faction.id]>=66){target.controllerId=faction.id;target.status="controlled";faction.strength=clamp(faction.strength+1,0,100);generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"territory","地方網絡形成新控制",faction.name+"在"+target.name+"建立了穩定的地方影響。"));}
+   if(target.controllerId===null&&target.influences[faction.id]>=66){target.controllerId=faction.id;target.status="controlled";faction.strength=clamp(faction.strength+1,0,100);generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"territory","地方網絡形成新控制",faction.name+"在"+target.name+"建立了穩定的地方影響。"));}else if(target.controllerId==="player"&&target.influences[faction.id]>=70&&(target.influences.player??0)<55){target.controllerId=faction.id;target.status="controlled";generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"territory","地盤控制權出現變化",faction.name+"在"+target.name+"取得更大的地方影響，原有控制關係發生變動。"));}
   }
   if(day%7===0)faction.cohesion=clamp(faction.cohesion+(faction.treasury>60?1:-1));faction.treasury=Math.max(0,faction.treasury+Math.floor(faction.strength*.04)-3);
  }
@@ -49,7 +49,7 @@ export function claimDistrict(world:WorldState,districtId:string):TurnResult{
  const current=world.playerStats??initialPlayerStats();const cost=district.status==="neutral"?32:22;if(current.cash<cost)return {world,message:"資金不足，需要 "+cost+" 點組織資源。"};
  const playerStats={...current,cash:current.cash-cost,reputation:clamp(current.reputation+2),publicPressure:clamp(current.publicPressure+(district.status==="neutral"?2:1))};
  const districts=world.districts.map(d=>d.id===districtId?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:78},stability:clamp(d.stability-2)}:d);const msg="玩家組織取得「"+district.name+"」的主要管理權。";
- return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
+ return {world:{...world,playerStats,districts,relationships,history:record(world,msg)},message:msg};
 }
 export function negotiate(world:WorldState,factionId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const faction=world.factions.find(f=>f.id===factionId);if(!faction||factionId==="player")return {world,message:"找不到可交涉的組織。"};
@@ -69,9 +69,9 @@ export function resolveDispute(world:WorldState,districtId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const district=world.districts.find(d=>d.id===districtId);if(!district||!district.controllerId||district.controllerId==="player")return {world,message:"請選擇由其他組織控制的地盤。"};
  const current=world.playerStats??initialPlayerStats();const opponent=world.factions.find(f=>f.id===district.controllerId);if(!opponent)return {world,message:"無法辨識對方組織。"};if(current.cash<35)return {world,message:"資金不足，需要 35 點協調資源。"};
  const own=world.factions.find(f=>f.id==="player");const leaders=world.people.filter(p=>p.factionId==="player"&&p.status==="active");const talent=leaders.reduce((n,p)=>n+p.leadership*.15+p.diplomacy*.1,0);
- const roll=((world.seed+world.day*31+district.id.length*17)%21)-10;const score=(own?.strength??22)+current.reputation*.25+current.trust*.15+talent+roll;const defense=opponent.strength+district.stability*.3+(100-(district.influences.player??0))*.15;const won=score>=defense;
+ const roll=((world.seed+world.day*31+district.id.length*17+world.history.length*13)%21)-10;const score=(own?.strength??22)+current.reputation*.3+current.trust*.2+talent*.6+roll;const defense=opponent.strength*.55+district.stability*.15+(100-(district.influences.player??0))*.08;const won=score>=defense;
  const playerStats={...current,cash:current.cash-35,publicPressure:clamp(current.publicPressure+(won?5:9)),trust:clamp(current.trust+(won?2:-5)),reputation:clamp(current.reputation+(won?3:-2))};
- const districts=world.districts.map(d=>d.id!==districtId?d:won?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:82,[opponent.id]:Math.min(35,d.influences[opponent.id]??20)}}:{...d,stability:clamp(d.stability-5),influences:{...d.influences,player:clamp((d.influences.player??0)+8)}});
+ const relationships=setRelation(world,"player",opponent.id,relationScore(world,"player",opponent.id)+(won?-5:-15));const districts=world.districts.map(d=>d.id!==districtId?d:won?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:82,[opponent.id]:Math.min(35,d.influences[opponent.id]??20)}}:{...d,stability:clamp(d.stability-5),influences:{...d.influences,player:clamp((d.influences.player??0)+8)}});
  const msg=won?"協調結果有利：玩家組織取得「"+district.name+"」的主要管理權。":"協調未能取得共識：「"+district.name+"」的局勢更加緊張。";
  return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
 }
