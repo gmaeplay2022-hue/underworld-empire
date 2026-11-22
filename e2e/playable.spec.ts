@@ -7,15 +7,19 @@ test("a player can create a world, start an organization, advance a day and relo
   await page.getByRole("button", { name: /生成新世界/ }).click();
   await expect(page.getByText("虛擬台灣・22 縣市")).toBeVisible();
 
-  const rows = page.locator(".district-row");
   let chosen = false;
-  for (let i = 0; i < await rows.count(); i++) {
-    const row = rows.nth(i);
-    const label = await row.innerText();
-    if (label.includes("無主地盤") || label.includes("中立地方網絡")) {
-      await row.click();
-      chosen = true;
-      break;
+  const counties = page.locator(".county-tile");
+  for (let countyIndex = 0; countyIndex < await counties.count() && !chosen; countyIndex++) {
+    await counties.nth(countyIndex).click();
+    const rows = page.locator(".district-row");
+    for (let i = 0; i < await rows.count(); i++) {
+      const row = rows.nth(i);
+      const label = await row.innerText();
+      if (label.includes("無主地盤") || label.includes("中立地方網絡")) {
+        await row.click();
+        chosen = true;
+        break;
+      }
     }
   }
   expect(chosen).toBeTruthy();
