@@ -63,7 +63,7 @@ npm test
 npm run build
 ```
 
-GitHub Actions 會執行自動測試與正式建置，並產生可下載的 `jianghu-web-build` 網頁建置檔。下載方式請見遊玩指南。
+GitHub Actions 會執行單元測試、Playwright 瀏覽器遊玩流程測試與正式建置，並產生可下載的 `jianghu-web-build` 網頁建置檔。下載方式請見遊玩指南。
 
 ## 設計原則
 本作是架空娛樂作品。犯罪題材僅以抽象敘事與策略數值呈現，不提供現實犯罪操作指引；不影射真實人物或組織。
