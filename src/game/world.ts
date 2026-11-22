@@ -1,11 +1,11 @@
 export type County = { id: string; name: string; region: string; districts: number; x: number; y: number; economy: number; population: number };
-export type Faction = { id: string; name: string; archetype: string; description: string; strength: number; founded: number; isMajor: boolean; cohesion: number; treasury: number };
-export type Person = { id: string; name: string; age: number; factionId: string; familyId: string; generation: number; parentIds: string[]; role: string; leadership: number; management: number; diplomacy: number; loyalty: number; health: number; status: "active" | "retired" };
+export type Faction = { id: string; name: string; archetype: string; description: string; strength: number; founded: number; isMajor: boolean; cohesion: number; treasury: number; headquartersCountyId?: string; influenceCountyIds?: string[]; goals?: string[]; internalTension?: number; worldRole?: string };
+export type Person = { id: string; name: string; age: number; factionId: string; familyId: string; generation: number; parentIds: string[]; role: string; leadership: number; management: number; diplomacy: number; loyalty: number; health: number; status: "active" | "retired"; personality?: string; values?: string; ambition?: string; skills?: string[]; trust?: number; affinity?: number; respect?: number; fear?: number; background?: string; };
 export type Relationship = { fromFactionId: string; toFactionId: string; score: number; status: "allied" | "friendly" | "neutral" | "rival" | "hostile" };
 export type WorldEvent = { id: string; day: number; category: "community" | "organization" | "diplomacy" | "economy" | "territory"; title: string; description: string; choices?: Array<{id:string;label:string}>; resolved?: boolean };
 export type District = { id: string; countyId: string; name: string; population: number; economy: number; development: number; stability: number; governmentAttention: number; controllerId: string | null; influences: Record<string, number>; status: "controlled" | "neutral" | "unclaimed" };
 export type PlayerStats = { cash: number; reputation: number; trust: number; publicPressure: number; dailyIncome: number; dailyUpkeep: number };
-export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string; birthplace?: string }; playerStats?: PlayerStats; schemaVersion: 2; generatorVersion: "1.0.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; people: Person[]; relationships: Relationship[]; events: WorldEvent[]; history: string[]; createdAt: string };
+export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string; birthplace?: string }; playerStats?: PlayerStats; schemaVersion: 2; generatorVersion: "1.0.0" | "1.1.0"; seed: number; name: string; day: number; difficulty: "standard"; worldTendency?: string; counties: County[]; factions: Faction[]; districts: District[]; people: Person[]; relationships: Relationship[]; events: WorldEvent[]; history: string[]; createdAt: string };
 
 const countyRows: Array<[string,string,number,number,number]> = [
   ["taipei","台北市",6,9,2],["new-taipei","新北市",6,8,3],["keelung","基隆市",3,11,2],["taoyuan","桃園市",5,7,4],["hsinchu-city","新竹市",3,6,5],["hsinchu-county","新竹縣",5,8,5],
@@ -17,41 +17,53 @@ export const COUNTY_DEFINITIONS: County[] = countyRows.map(([id,name,districts,x
 export const INITIAL_DISTRICT_COUNT = COUNTY_DEFINITIONS.reduce((n,c)=>n+c.districts,0);
 
 const archetypes = [
-  ["老牌地方組織","重視傳承與地方關係，行事謹慎。"],
-  ["都會型組織","擅長整合資源，重視聲望與組織效率。"],
-  ["家族型組織","內部關係緊密，重視世代與忠誠。"],
-  ["新興組織","組織年輕、彈性高，發展方向仍在變化。"],
-  ["跨區域組織","具有跨地區人脈，管理與協調成本較高。"],
-  ["保守型組織","優先維持穩定，較少採取高風險決策。"],
-  ["擴張型組織","積極尋求發展機會，但容易引發競爭。"],
-  ["轉型中的組織","正經歷領導與組織結構調整。"]
+  {type:"地方組織",description:"以地方人際網絡、社區信任與組織凝聚為發展基礎。",size:"medium",count:2},
+  {type:"商業勢力",description:"以資金、合法商業往來與跨業合作建立影響力。",size:"large",count:1},
+  {type:"地方派系",description:"重視地方聲望、公共關係與地方議題的協調。",size:"medium",count:1},
+  {type:"產業勢力",description:"以產業鏈、物流、建設與區域資源形成長期布局。",size:"large",count:1},
+  {type:"地下勢力",description:"以非正式人際網絡與組織整合形成虛構競爭關係。",size:"small",count:1},
+  {type:"地下勢力",description:"重視組織紀律、內部整合與長期生存。",size:"medium",count:1},
+  {type:"外來勢力",description:"具跨區域聯繫，持續尋找在地合作與發展機會。",size:"medium",count:1}
 ] as const;
-const nameA = ["青岑","遠川","東序","長夜","白潮","新港","山河","霧城","南庭","北辰","群岳","明川"];
-const nameB = ["會","社","堂","聯盟","同盟","商會","協進會","家族"];
+const nameA = ["青岑","遠川","東序","長夜","白潮","新港","山河","霧城","南庭","北辰","群岳","明川","松嶺","海隅","禾川","星野"];
+const nameB = ["會","社","堂","聯盟","同盟","商會","協進會","家族","企業聯合","發展會"];
 const localNames = ["榕樹里聯誼會","溪畔地方網絡","港灣商圈協會","山城文化社群","舊城街坊會","新城共好聯盟","海風地方協會","中央市場自治會","南境青年社群","河岸生活協會"];
 const districtWords = ["北城","中城","南城","東岸","西門","河岸","新站","舊城","港灣","山城","林園","商業核心","文教區","工業帶","外圍城鎮","海線","丘陵","新市鎮"];
+const surnames=["陳","林","黃","張","李","王","吳","劉","蔡","楊","許","鄭","謝","郭","洪","曾","邱","廖","周","徐"];
+const givenNames=["文岳","明哲","志遠","家豪","承恩","柏勳","建宏","立群","宗翰","宇翔","以安","思妤","子維","沛蓉","柏廷","安然","承岳","佳穎","冠宇","雅婷","昱辰","品妍","家睿","語彤"];
+const personalities=["沉穩務實","擅長協調","果斷強勢","謹慎保守","重視人情","理性計算","理想導向","外柔內剛","積極進取","低調觀察"];
+const values=["重視承諾與信任","重視秩序與穩定","重視公平與聲望","重視家庭與傳承","重視效率與成果","重視自主與改革"];
+const ambitions=["維持組織長期穩定","擴大地方合作網絡","培養可靠的接班團隊","改善地方公共環境","取得更大的決策責任","推動組織轉型"];
+const skills=["組織管理","溝通協調","財務規劃","公共關係","產業經營","人才培育","策略判斷","地方服務"];
+const tendencies=["商業競逐型","地方派系型","產業發展型","權力競爭型","外來勢力型"];
 function rng(seed:number){let a=seed>>>0;return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 function pick<T>(r:()=>number,items:readonly T[]):T{return items[Math.floor(r()*items.length)];}
 function shuffle<T>(r:()=>number,items:T[]):T[]{const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function personName(r:()=>number){return pick(r,surnames)+pick(r,givenNames);}
+function makePerson(r:()=>number,id:string,factionId:string,role:string,age:number,familyId:string,generation=1,parentIds:string[]=[]):Person{
+ const personality=pick(r,personalities);
+ return {id,name:personName(r),age,factionId,familyId,generation,parentIds,role,leadership:35+Math.floor(r()*61),management:35+Math.floor(r()*61),diplomacy:35+Math.floor(r()*61),loyalty:45+Math.floor(r()*51),health:75+Math.floor(r()*26),status:"active",personality,values:pick(r,values),ambition:pick(r,ambitions),skills:shuffle(r,skills).slice(0,2+Math.floor(r()*2)),trust:35+Math.floor(r()*61),affinity:25+Math.floor(r()*71),respect:25+Math.floor(r()*71),fear:Math.floor(r()*41),background:"出身與經歷依本世界種子生成的虛構人物。"};
+}
 export function createWorld(seed:number,difficulty:"standard"="standard"):WorldState{
  const r=rng(seed); const counties=COUNTY_DEFINITIONS.map(c=>({...c,population:Math.round((35+r()*165)*1000),economy:Math.round(25+r()*75)}));
  const usedFactionNames=new Set<string>();
- const factions:Faction[]=archetypes.map((a,i)=>{let name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];while(usedFactionNames.has(name))name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];usedFactionNames.add(name);return {id:"major-"+(i+1),name,archetype:a[0],description:a[1],strength:35+Math.floor(r()*46),founded:1985+Math.floor(r()*35),isMajor:true,cohesion:55+Math.floor(r()*40),treasury:180+Math.floor(r()*320)};});
+ const specs=archetypes.flatMap(a=>Array.from({length:a.count},()=>a));
+ const shuffledSpecs=shuffle(r,[...specs]);
+ const factions:Faction[]=shuffledSpecs.map((a,i)=>{let name=pick(r,nameA)+pick(r,nameB);while(usedFactionNames.has(name))name=pick(r,nameA)+pick(r,nameB);usedFactionNames.add(name);const headquarters=pick(r,counties);const size=a.size;const strength=size==="large"?62+Math.floor(r()*20):size==="small"?25+Math.floor(r()*20):42+Math.floor(r()*27);return {id:"major-"+(i+1),name,archetype:a.type,description:a.description,strength,founded:1985+Math.floor(r()*35),isMajor:true,cohesion:50+Math.floor(r()*46),treasury:size==="large"?380+Math.floor(r()*220):size==="small"?90+Math.floor(r()*100):190+Math.floor(r()*210),headquartersCountyId:headquarters.id,influenceCountyIds:[headquarters.id,...shuffle(r,counties.filter(c=>c.id!==headquarters.id)).slice(0,1+Math.floor(r()*3)).map(c=>c.id)],goals:shuffle(r,ambitions).slice(0,2),internalTension:Math.floor(r()*46),worldRole:a.type};});
  const localCount=8+Math.floor(r()*3);
- for(let i=0;i<localCount;i++) factions.push({id:"local-"+(i+1),name:localNames[i%localNames.length],archetype:"地方網絡",description:"由地方人物與社群關係逐步形成的虛構地方組織。",strength:12+Math.floor(r()*24),founded:2005+Math.floor(r()*20),isMajor:false,cohesion:50+Math.floor(r()*35),treasury:45+Math.floor(r()*100)});
- const districts:District[]=[]; let index=0;
+ for(let i=0;i<localCount;i++){const headquarters=pick(r,counties);factions.push({id:"local-"+(i+1),name:localNames[i%localNames.length]+"・"+pick(r,["東區","西區","新城","河岸","港區","山城"]),archetype:"地方網絡",description:"由地方人物與社群關係逐步形成的虛構地方組織。",strength:12+Math.floor(r()*24),founded:2005+Math.floor(r()*20),isMajor:false,cohesion:50+Math.floor(r()*35),treasury:45+Math.floor(r()*100),headquartersCountyId:headquarters.id,influenceCountyIds:[headquarters.id],goals:shuffle(r,ambitions).slice(0,1),internalTension:Math.floor(r()*35)});}
+ const districts:District[]=[];let index=0;
  for(const county of counties){const used=new Set<string>();for(let j=0;j<county.districts;j++){let name=pick(r,districtWords);let attempts=0;while(used.has(name)&&attempts++<30)name=pick(r,districtWords);used.add(name);districts.push({id:"d-"+String(++index).padStart(3,"0"),countyId:county.id,name,population:Math.round(8+r()*52),economy:Math.round(15+r()*85),development:Math.round(20+r()*80),stability:Math.round(45+r()*50),governmentAttention:Math.round(5+r()*55),controllerId:null,influences:{},status:"unclaimed"});}}
- const order=shuffle(r,districts);
- // Balanced opening: 40 districts held by a variable subset of major factions, 12 by local groups, 18 neutral, 26 unclaimed.
- const activeMajors=shuffle(r,factions.slice(0,8)).slice(0,6+Math.floor(r()*3));
+ const order=shuffle(r,districts);const activeMajors=shuffle(r,factions.slice(0,8)).slice(0,6+Math.floor(r()*3));
  order.slice(0,40).forEach((d,i)=>{const f=activeMajors[i%activeMajors.length];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
  order.slice(40,52).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
  order.slice(52,70).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
- for(const d of districts){if(d.controllerId){for(const f of shuffle(r,factions.filter(f=>f.id!==d.controllerId)).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);} }
- const people = factions.map((f,i)=>({id:"person-"+f.id+"-leader",name:["陳文岳","周明哲","林志遠","許家豪","郭承恩","黃柏勳","吳建宏","張立群","蔡宗翰","鄭宇翔"][i%10],age:38+Math.floor(r()*24),factionId:f.id,familyId:"family-"+f.id,generation:1,parentIds:[],role:"領導者",leadership:45+Math.floor(r()*50),management:40+Math.floor(r()*55),diplomacy:35+Math.floor(r()*60),loyalty:65+Math.floor(r()*30),health:75+Math.floor(r()*25),status:"active" as const}));
- const relationships = factions.flatMap((f,i)=>factions.slice(i+1).map(other=>{const score=Math.floor(r()*61)-30;return {fromFactionId:f.id,toFactionId:other.id,score,status:(score>=45?"friendly":score<=-35?"rival":"neutral") as "friendly"|"rival"|"neutral"};}));
- const events = [{id:"event-1",day:1,category:"community" as const,title:"新局勢形成",description:"各地地方網絡開始觀察新世界的變化，新的合作與競爭關係逐漸浮現。"}];
- return {schemaVersion:2,generatorVersion:"1.0.0",seed,name:"江湖世界・"+seed,day:1,difficulty,counties,factions,districts,people,relationships,events,history:["世界建立：各地區的地方網絡與組織開始形成新的局勢。"],createdAt:new Date().toISOString()};
+ for(const d of districts){if(d.controllerId){for(const f of shuffle(r,factions.filter(f=>f.id!==d.controllerId)).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);}}
+ const people:Person[]=[];
+ for(const f of factions){const leader=makePerson(r,"person-"+f.id+"-leader",f.id,"領導者",38+Math.floor(r()*24),"family-"+f.id);people.push(leader);const cadreCount=2+Math.floor(r()*2);for(let i=0;i<cadreCount;i++)people.push(makePerson(r,"person-"+f.id+"-cadre-"+(i+1),f.id,"核心幹部",29+Math.floor(r()*27),"family-"+f.id));const memberCount=3+Math.floor(r()*3);for(let i=0;i<memberCount;i++)people.push(makePerson(r,"person-"+f.id+"-member-"+(i+1),f.id,"重要成員",22+Math.floor(r()*35),"family-"+f.id));}
+ const relations=factions.flatMap((f,i)=>factions.slice(i+1).map(other=>{let score=Math.floor(r()*61)-30;const sameRegion=f.headquartersCountyId===other.headquartersCountyId;if(sameRegion)score-=12;const businessPair=["商業勢力","產業勢力"].includes(f.archetype)&&["商業勢力","產業勢力"].includes(other.archetype);if(businessPair)score+=18;score=Math.max(-85,Math.min(85,score));return {fromFactionId:f.id,toFactionId:other.id,score,status:(score>=65?"allied":score>=30?"friendly":score<=-65?"hostile":score<=-30?"rival":"neutral") as Relationship["status"]};}));
+ const events:WorldEvent[]=[{id:"event-1",day:1,category:"community",title:"新局勢形成",description:"各地地方網絡開始觀察新世界的變化，新的合作與競爭關係逐漸浮現。"}];
+ return {schemaVersion:2,generatorVersion:"1.1.0",seed,name:"江湖世界・"+seed,day:1,difficulty,worldTendency:pick(r,tendencies),counties,factions,districts,people,relationships:relations,events,history:["世界建立：八大核心勢力、地方網絡與重要人物已依世界種子形成初始局勢。"],createdAt:new Date().toISOString()};
 }
 export function seedFromNow(){return (Date.now() ^ Math.floor(Math.random()*0xffffffff))>>>0;}
 export function countWorld(world:WorldState){return {districts:world.districts.length,controlled:world.districts.filter(d=>d.controllerId).length,neutral:world.districts.filter(d=>d.status==="neutral").length,unclaimed:world.districts.filter(d=>d.status==="unclaimed").length,factions:world.factions.length};}
