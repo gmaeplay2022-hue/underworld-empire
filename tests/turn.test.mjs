@@ -18,7 +18,7 @@ test("daily turn advances one day and settles income and upkeep", () => {
   const world = playerWorld();
   const result = advanceDay(world);
   assert.equal(result.world.day, world.day + 1);
-  assert.equal(result.world.playerStats?.cash, 102);
+  assert.equal(result.world.playerStats?.cash, 100 + 4 + Math.floor(world.districts.find(d => d.controllerId === "player")!.economy * 0.025) - 2);
   assert.match(result.message, /收入/);
 });
 
