@@ -55,3 +55,37 @@ test("player organization name follows its new generational leader",()=>{
  assert.notEqual(result.world.player.leaderName,leader.name);
  assert.equal(result.world.player.leaderName,result.world.people.find(p=>p.factionId==="player"&&p.status==="active"&&p.role.includes("領導者")).name);
 });
+
+test("save writes are serialized per slot and preserve request order", async () => {
+ const { enqueueSlotWrite } = await import("../src/game/storage.ts");
+ const queues = new Map();
+ const events = [];
+ let releaseFirst;
+ const firstGate = new Promise(resolve => { releaseFirst = resolve; });
+ const first = enqueueSlotWrite(queues, 0, async () => {
+  events.push("first:start");
+  await firstGate;
+  events.push("first:end");
+ });
+ const second = enqueueSlotWrite(queues, 0, async () => { events.push("second"); });
+ const independent = enqueueSlotWrite(queues, 1, async () => { events.push("other-slot"); });
+ await Promise.resolve();
+ await Promise.resolve();
+ assert.deepEqual(events, ["first:start", "other-slot"]);
+ releaseFirst();
+ await Promise.all([first, second, independent]);
+ assert.deepEqual(events, ["first:start", "other-slot", "first:end", "second"]);
+ assert.equal(queues.size, 0);
+});
+
+test("a failed save does not block later writes to the same slot", async () => {
+ const { enqueueSlotWrite } = await import("../src/game/storage.ts");
+ const queues = new Map();
+ const events = [];
+ const failed = enqueueSlotWrite(queues, 3, async () => { events.push("failed"); throw new Error("disk"); });
+ const recovered = enqueueSlotWrite(queues, 3, async () => { events.push("recovered"); });
+ await assert.rejects(failed, /disk/);
+ await recovered;
+ assert.deepEqual(events, ["failed", "recovered"]);
+ assert.equal(queues.size, 0);
+});
