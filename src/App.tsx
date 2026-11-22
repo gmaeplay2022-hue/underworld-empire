@@ -83,14 +83,14 @@ export default function App() {
   return (
     <main className="shell">
       <header className="topbar">
-        <a className="brand" href="#"><span className="brand-mark">黑</span><span>UNDERWORLD <b>EMPIRE</b><small>地下帝國・故事模式</small></span></a>
+        <a className="brand" href="#"><span className="brand-mark">江</span><span>JIANGHU<small>江湖・故事模式</small></span></a>
         <div className="top-actions"><span className="mode-pill">單人劇情</span><span className="chapter-count">第 {Math.min(chapterIndex + 1, chapters.length)} / {chapters.length} 章</span></div>
       </header>
 
       <section className="hero">
         <div className="hero-copy">
           <div className="kicker"><span /> TAIWAN · FICTIONAL UNDERWORLD CHRONICLE</div>
-          <h1>黑道風雲<span>：地下帝國</span></h1>
+          <h1>江湖</h1>
           <p>一座城市，無數選擇。真正的勢力，從人心開始。</p>
         </div>
         <div className="hero-stamp"><span>STORY</span><strong>MODE</strong><small>VOL. 01</small></div>
@@ -151,7 +151,7 @@ export default function App() {
           </aside>
         </div>
       )}
-      <footer><span>UNDERWORLD EMPIRE</span><span>台灣架空故事世界 · 原創虛構作品</span></footer>
+      <footer><span>JIANGHU</span><span>台灣架空故事世界 · 原創虛構作品</span></footer>
     </main>
   );
 }
