@@ -62,8 +62,8 @@ test("weekly community events present choices and resolve exactly once",()=>{
  assert.ok(pending);
  const result=resolveWorldEvent(weekly,pending.id,"support");
  assert.equal(result.world.events.find(e=>e.id===pending.id).resolved,true);
- assert.equal(result.world.playerStats.cash,108);
+ assert.equal(result.world.playerStats.cash,weekly.playerStats.cash-12);
  const repeated=resolveWorldEvent(result.world,pending.id,"support");
  assert.match(repeated.message,/已處理/);
- assert.equal(repeated.world.playerStats.cash,108);
+ assert.equal(repeated.world.playerStats.cash,weekly.playerStats.cash-12);
 });
