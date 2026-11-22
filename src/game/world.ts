@@ -31,7 +31,7 @@ function pick<T>(r:()=>number,items:readonly T[]):T{return items[Math.floor(r()*
 function shuffle<T>(r:()=>number,items:T[]):T[]{const a=[...items];for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 export function createWorld(seed:number,difficulty:"standard"="standard"):WorldState{
  const r=rng(seed); const counties=COUNTY_DEFINITIONS.map(c=>({...c,population:Math.round((35+r()*165)*1000),economy:Math.round(25+r()*75)}));
- const factions:Faction[]=archetypes.map((a,i)=>({id:"major-"+(i+1),name:nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)],archetype:a[0],description:a[1],strength:35+Math.floor(r()*46),founded:1985+Math.floor(r()*35),isMajor:true}));
+ const usedFactionNames=new Set<string>();\n const factions:Faction[]=archetypes.map((a,i)=>{let name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];while(usedFactionNames.has(name))name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];usedFactionNames.add(name);return {id:"major-"+(i+1),name,archetype:a[0],description:a[1],strength:35+Math.floor(r()*46),founded:1985+Math.floor(r()*35),isMajor:true};});
  const localCount=8+Math.floor(r()*3);
  for(let i=0;i<localCount;i++) factions.push({id:"local-"+(i+1),name:localNames[i%localNames.length],archetype:"地方網絡",description:"由地方人物與社群關係逐步形成的虛構地方組織。",strength:12+Math.floor(r()*24),founded:2005+Math.floor(r()*20),isMajor:false});
  const districts:District[]=[]; let index=0;
