@@ -30,7 +30,7 @@ export function advanceDay(world:WorldState):TurnResult{
  if(day%30===0&&factions.filter(f=>!f.isMajor&&f.id!=="player").length<18&&districts.some(d=>d.status==="unclaimed"&&!d.controllerId)){
   const n=factions.filter(f=>!f.isMajor&&f.id!=="player").length+1;const id="emergent-"+day;const name=["新城共好社群","青禾地方聯盟","海風文化協會","城南生活網絡","山海青年會"][n%5]+" "+n;
   factions.push({id,name,archetype:"新興地方網絡",description:"由地方居民與新世代人物自然形成的虛構組織。",strength:16+((world.seed+day)%18),founded:2026+Math.floor(day/365),isMajor:false,cohesion:60,treasury:55});
-  people.push({id:"person-"+id+"-leader",name:["葉以安","陳思妤","高子維","林沛蓉","周柏廷"][n%5],age:25+(n%18),factionId:id,familyId:"family-"+id,generation:1,parentIds:[],role:"創始召集人",leadership:45+(n%25),management:48+(n%27),diplomacy:52+(n%24),loyalty:80,health:100,status:"active"});
+  people.push({id:"person-"+id+"-leader",name:["葉以安","陳思妤","高子維","林沛蓉","周柏廷"][n%5],age:25+(n%18),factionId:id,familyId:"family-"+id,generation:1,parentIds:[],role:"領導者",leadership:45+(n%25),management:48+(n%27),diplomacy:52+(n%24),loyalty:80,health:100,status:"active"});
   for(const other of factions.filter(f=>f.id!==id))relationships.push({fromFactionId:id,toFactionId:other.id,score:0,status:"neutral"});
   generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","新興地方網絡成立",name+"由地方社群逐步凝聚成形，成為新的世界參與者。"));
  }
