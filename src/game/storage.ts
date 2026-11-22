@@ -11,7 +11,7 @@ export function migrateWorld(input:unknown):WorldState{
  const people=Array.isArray(raw.people)?raw.people.map(p=>({...p,familyId:p.familyId??"family-"+p.factionId,generation:p.generation??1,parentIds:p.parentIds??[]})):factions.map((f,i)=>({id:"migrated-"+f.id+"-leader",name:["陳文岳","周明哲","林志遠","許家豪","郭承恩","黃柏勳"][i%6],age:42,factionId:f.id,familyId:"family-"+f.id,generation:1,parentIds:[],role:"領導者",leadership:55,management:55,diplomacy:50,loyalty:75,health:90,status:"active" as const}));
  const relationships=Array.isArray(raw.relationships)?raw.relationships:[];
  const events=Array.isArray(raw.events)?raw.events:[{id:"migration-"+(raw.day??1),day:raw.day??1,category:"organization" as const,title:"存檔資料升級",description:"舊版世界已升級至目前資料格式。"}];
- return {...raw,schemaVersion:2,generatorVersion:"1.0.0",day:Math.max(1,raw.day??1),factions,people,relationships,events,history:Array.isArray(raw.history)?raw.history:[],playerStats:raw.playerStats} as WorldState;
+ return {...raw,schemaVersion:2,generatorVersion:raw.generatorVersion==="1.1.0"?"1.1.0":"1.0.0",day:Math.max(1,raw.day??1),factions,people,relationships,events,history:Array.isArray(raw.history)?raw.history:[],playerStats:raw.playerStats} as WorldState;
 }
 // Serialize writes per slot: a slow older autosave must never overwrite a newer state.
 const writeQueues=new Map<number,Promise<void>>();
