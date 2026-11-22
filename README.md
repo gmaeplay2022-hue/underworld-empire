@@ -27,8 +27,8 @@ npm install
 npm run dev
 ```
 
-## 建置
-```bash
+## 測試
+\`\`\`bash\nnpm test\n\`\`\`\n\n## 建置\n```bash
 npm run build
 ```
 
