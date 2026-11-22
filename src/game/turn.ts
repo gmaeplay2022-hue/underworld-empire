@@ -49,7 +49,7 @@ export function claimDistrict(world:WorldState,districtId:string):TurnResult{
  const current=world.playerStats??initialPlayerStats();const cost=district.status==="neutral"?32:22;if(current.cash<cost)return {world,message:"資金不足，需要 "+cost+" 點組織資源。"};
  const playerStats={...current,cash:current.cash-cost,reputation:clamp(current.reputation+2),publicPressure:clamp(current.publicPressure+(district.status==="neutral"?2:1))};
  const districts=world.districts.map(d=>d.id===districtId?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:78},stability:clamp(d.stability-2)}:d);const msg="玩家組織取得「"+district.name+"」的主要管理權。";
- return {world:{...world,playerStats,districts,relationships,history:record(world,msg)},message:msg};
+ return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
 }
 export function negotiate(world:WorldState,factionId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const faction=world.factions.find(f=>f.id===factionId);if(!faction||factionId==="player")return {world,message:"找不到可交涉的組織。"};
@@ -73,7 +73,7 @@ export function resolveDispute(world:WorldState,districtId:string):TurnResult{
  const playerStats={...current,cash:current.cash-35,publicPressure:clamp(current.publicPressure+(won?5:9)),trust:clamp(current.trust+(won?2:-5)),reputation:clamp(current.reputation+(won?3:-2))};
  const relationships=setRelation(world,"player",opponent.id,relationScore(world,"player",opponent.id)+(won?-5:-15));const districts=world.districts.map(d=>d.id!==districtId?d:won?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:82,[opponent.id]:Math.min(35,d.influences[opponent.id]??20)}}:{...d,stability:clamp(d.stability-5),influences:{...d.influences,player:clamp((d.influences.player??0)+8)}});
  const msg=won?"協調結果有利：玩家組織取得「"+district.name+"」的主要管理權。":"協調未能取得共識：「"+district.name+"」的局勢更加緊張。";
- return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
+ return {world:{...world,playerStats,districts,relationships,history:record(world,msg)},message:msg};
 }
 export function developDistrict(world:WorldState,districtId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const district=world.districts.find(d=>d.id===districtId);if(!district||district.controllerId!=="player")return {world,message:"只能投資自己管理的地盤。"};
