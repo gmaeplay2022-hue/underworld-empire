@@ -28,7 +28,8 @@ test("all eight major AI factions exist, while only a subset starts with territo
   const world = createWorld(20261122);
   const major = world.factions.filter(faction => faction.isMajor);
   const active = new Set(world.districts.filter(district => district.controllerId?.startsWith("major-")).map(district => district.controllerId));
-  assert.equal(major.length, 8);\n  assert.equal(new Set(major.map(faction => faction.name)).size, 8);
+  assert.equal(major.length, 8);
+  assert.equal(new Set(major.map(faction => faction.name)).size, 8);
   assert.ok(active.size >= 6 && active.size <= 8);
 });
 
