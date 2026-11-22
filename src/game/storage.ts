@@ -15,17 +15,20 @@ export function migrateWorld(input:unknown):WorldState{
 }
 // Serialize writes per slot: a slow older autosave must never overwrite a newer state.
 const writeQueues=new Map<number,Promise<void>>();
+export function enqueueSlotWrite<K>(queues:Map<K,Promise<void>>,key:K,operation:()=>Promise<void>):Promise<void>{
+ const previous=queues.get(key)??Promise.resolve();
+ const current=previous.catch(()=>{}).then(operation);
+ queues.set(key,current);
+ return current.finally(()=>{if(queues.get(key)===current)queues.delete(key);});
+}
 export function saveWorld(slot:number,world:WorldState):Promise<void>{
  if(!Number.isInteger(slot)||slot<0||slot>10)return Promise.reject(new Error("存檔槽必須介於 0 到 10"));
  const snapshot=migrateWorld(structuredClone(world));
- const previous=writeQueues.get(slot)??Promise.resolve();
- const write=previous.catch(()=>{}).then(async()=>{
+ return enqueueSlotWrite(writeQueues,slot,async()=>{
   const db=await openDb();
   try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({slot,label:snapshot.name,world:snapshot,savedAt:new Date().toISOString()} satisfies SaveSlot);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
   finally{db.close();}
  });
- writeQueues.set(slot,write);
- return write.finally(()=>{if(writeQueues.get(slot)===write)writeQueues.delete(slot);});
 }
 export async function loadWorld(slot:number):Promise<WorldState|null>{
  const queued=writeQueues.get(slot);if(queued)await queued.catch(()=>{});
