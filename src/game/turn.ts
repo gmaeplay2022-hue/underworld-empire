@@ -14,19 +14,28 @@ export function advanceDay(world:WorldState):TurnResult{
  const current=world.playerStats??initialPlayerStats();const controlled=world.districts.filter(d=>d.controllerId==="player");
  const income=current.dailyIncome+controlled.reduce((sum,d)=>sum+Math.floor(d.economy*.025),0);const upkeep=current.dailyUpkeep+Math.max(0,Math.floor((controlled.length-1)/4));const cash=Math.max(0,current.cash+income-upkeep);const day=world.day+1;
  const playerStats={...current,cash,reputation:clamp(current.reputation+(controlled.length?1:0)),trust:clamp(current.trust+(current.cash>=upkeep?1:-2)),publicPressure:clamp(current.publicPressure+(controlled.some(d=>d.stability<42)?2:-1))};
- const districts=world.districts.map(d=>({...d,influences:{...d.influences}}));const factions=world.factions.map(f=>({...f}));const generatedEvents:WorldEvent[]=[];
+ const districts=world.districts.map(d=>({...d,influences:{...d.influences}}));const factions=world.factions.map(f=>({...f}));let relationships=[...world.relationships];let people=world.people.map(p=>({...p,age:p.age+(day%365===0?1:0),health:clamp(p.health-(day%30===0?1:0))}));const generatedEvents:WorldEvent[]=[];
  for(const faction of factions.filter(f=>f.id!=="player")){
   const target=districts.filter(d=>d.status!=="controlled"||d.controllerId===faction.id).sort((a,b)=>(a.influences[faction.id]??0)-(b.influences[faction.id]??0))[0];
   if(target){const drift=1+((world.seed+day*11+faction.id.length*7+target.id.length)%3);target.influences[faction.id]=clamp((target.influences[faction.id]??0)+drift);
-   if(target.controllerId===null&&target.influences[faction.id]>=66&&target.status!=="neutral"){target.controllerId=faction.id;target.status="controlled";faction.strength=clamp(faction.strength+1,0,100);generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"territory","地方網絡形成新控制",faction.name+"在"+target.name+"建立了穩定的地方影響。"));}
+   if(target.controllerId===null&&target.influences[faction.id]>=66){target.controllerId=faction.id;target.status="controlled";faction.strength=clamp(faction.strength+1,0,100);generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"territory","地方網絡形成新控制",faction.name+"在"+target.name+"建立了穩定的地方影響。"));}
   }
   if(day%7===0)faction.cohesion=clamp(faction.cohesion+(faction.treasury>60?1:-1));faction.treasury=Math.max(0,faction.treasury+Math.floor(faction.strength*.04)-3);
  }
+ const playerFaction=factions.find(f=>f.id==="player");
+ if(playerFaction){playerFaction.treasury=playerStats.cash;playerFaction.cohesion=clamp(Math.round((playerStats.trust+100-playerStats.publicPressure)/2));playerFaction.strength=clamp(24+controlled.length*3+Math.floor(playerStats.reputation*.2));}
+ if(day%14===0){const ai=factions.filter(f=>f.id!=="player");for(let i=0;i<ai.length;i++){for(let j=i+1;j<ai.length;j++){const old=relationScore({...world,relationships},""+ai[i].id,""+ai[j].id);const drift=((world.seed+day+i*13+j*7)%3)-1;relationships=setRelation({...world,relationships},ai[i].id,ai[j].id,old+drift);}}}
+ if(day%30===0&&factions.filter(f=>!f.isMajor&&f.id!=="player").length<18&&districts.some(d=>d.status==="unclaimed"&&!d.controllerId)){
+  const n=factions.filter(f=>!f.isMajor&&f.id!=="player").length+1;const id="emergent-"+day;const name=["新城共好社群","青禾地方聯盟","海風文化協會","城南生活網絡","山海青年會"][n%5]+" "+n;
+  factions.push({id,name,archetype:"新興地方網絡",description:"由地方居民與新世代人物自然形成的虛構組織。",strength:16+((world.seed+day)%18),founded:2026+Math.floor(day/365),isMajor:false,cohesion:60,treasury:55});
+  people.push({id:"person-"+id+"-leader",name:["葉以安","陳思妤","高子維","林沛蓉","周柏廷"][n%5],age:25+(n%18),factionId:id,role:"創始召集人",leadership:45+(n%25),management:48+(n%27),diplomacy:52+(n%24),loyalty:80,health:100,status:"active"});
+  for(const other of factions.filter(f=>f.id!==id))relationships.push({fromFactionId:id,toFactionId:other.id,score:0,status:"neutral"});
+  generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","新興地方網絡成立",name+"由地方社群逐步凝聚成形，成為新的世界參與者。"));
+ }
  if(day%7===0){const stable=districts.filter(d=>d.stability>=65).length;generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"community","地方週報","本週共有 "+stable+" 個地盤維持穩定。地方組織持續調整資源與人際關係。"));}
- const people=world.people.map(p=>({...p,age:p.age+(day%365===0?1:0),health:clamp(p.health-(day%30===0?1:0))}));
  if(day%365===0)generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","年度人事檢視","新的一年開始，各組織重新評估幹部責任與長期接班安排。"));
  const history=generatedEvents.reduce((h,e)=>[e.title+"："+e.description,...h].slice(0,150),record(world,"第 "+day+" 天結算：收入 "+income+"、維持支出 "+upkeep+"，可用資金 "+cash+"。"));
- return {world:{...world,day,playerStats,districts,factions,people,events:[...generatedEvents,...world.events].slice(0,80),history},message:"第 "+day+" 天結算完成：收入 "+income+"、支出 "+upkeep+"，AI 勢力與地方事件已更新。"};
+ return {world:{...world,day,playerStats,districts,factions,people,relationships,events:[...generatedEvents,...world.events].slice(0,80),history},message:"第 "+day+" 天結算完成：收入 "+income+"、支出 "+upkeep+"，AI 勢力與地方事件已更新。"};
 }
 export function applyPolicy(world:WorldState,action:PolicyAction):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const current=world.playerStats??initialPlayerStats();
@@ -53,7 +62,7 @@ export function recruitPerson(world:WorldState):TurnResult{
  if(roster.length>=8)return {world,message:"核心幹部已達 8 人上限。"};if(current.cash<30)return {world,message:"資金不足，需要 30 點招募資源。"};
  const names=["沈以安","方承志","江若彤","葉書廷","高予晴","邱柏翰","宋品妍","杜明軒","簡沛瑜","許庭維"];const index=(world.seed+world.day+roster.length*7)%names.length;
  const person:Person={id:"person-player-"+(roster.length+1),name:names[index],age:24+(world.seed+world.day)%24,factionId:"player",role:"核心幹部",leadership:40+(world.seed%31),management:45+((world.seed+17)%31),diplomacy:40+((world.seed+29)%31),loyalty:68,health:100,status:"active"};
- const playerStats={...current,cash:current.cash-30,trust:clamp(current.trust+2)};const msg="新幹部「"+person.name+"」加入組織，擅長管理與協調。";
+ const playerStats={...current,cash:current.cash-30,trust:clamp(current.trust+2),dailyUpkeep:current.dailyUpkeep+1};const msg="新幹部「"+person.name+"」加入組織，擅長管理與協調。";
  return {world:{...world,people:[...world.people,person],playerStats,history:record(world,msg)},message:msg};
 }
 export function resolveDispute(world:WorldState,districtId:string):TurnResult{
