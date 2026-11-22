@@ -1,8 +1,11 @@
 export type County = { id: string; name: string; region: string; districts: number; x: number; y: number; economy: number; population: number };
-export type Faction = { id: string; name: string; archetype: string; description: string; strength: number; founded: number; isMajor: boolean };
+export type Faction = { id: string; name: string; archetype: string; description: string; strength: number; founded: number; isMajor: boolean; cohesion: number; treasury: number };
+export type Person = { id: string; name: string; age: number; factionId: string; role: string; leadership: number; management: number; diplomacy: number; loyalty: number; health: number; status: "active" | "retired" };
+export type Relationship = { fromFactionId: string; toFactionId: string; score: number; status: "allied" | "friendly" | "neutral" | "rival" | "hostile" };
+export type WorldEvent = { id: string; day: number; category: "community" | "organization" | "diplomacy" | "economy" | "territory"; title: string; description: string };
 export type District = { id: string; countyId: string; name: string; population: number; economy: number; development: number; stability: number; governmentAttention: number; controllerId: string | null; influences: Record<string, number>; status: "controlled" | "neutral" | "unclaimed" };
 export type PlayerStats = { cash: number; reputation: number; trust: number; publicPressure: number; dailyIncome: number; dailyUpkeep: number };
-export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string }; playerStats?: PlayerStats; schemaVersion: 1; generatorVersion: "0.2.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; history: string[]; createdAt: string };
+export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string }; playerStats?: PlayerStats; schemaVersion: 2; generatorVersion: "1.0.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; people: Person[]; relationships: Relationship[]; events: WorldEvent[]; history: string[]; createdAt: string };
 
 const countyRows: Array<[string,string,number,number,number]> = [
   ["taipei","台北市",6,9,2],["new-taipei","新北市",6,8,3],["keelung","基隆市",3,11,2],["taoyuan","桃園市",5,7,4],["hsinchu-city","新竹市",3,6,5],["hsinchu-county","新竹縣",5,8,5],
@@ -33,9 +36,9 @@ function shuffle<T>(r:()=>number,items:T[]):T[]{const a=[...items];for(let i=a.l
 export function createWorld(seed:number,difficulty:"standard"="standard"):WorldState{
  const r=rng(seed); const counties=COUNTY_DEFINITIONS.map(c=>({...c,population:Math.round((35+r()*165)*1000),economy:Math.round(25+r()*75)}));
  const usedFactionNames=new Set<string>();
- const factions:Faction[]=archetypes.map((a,i)=>{let name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];while(usedFactionNames.has(name))name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];usedFactionNames.add(name);return {id:"major-"+(i+1),name,archetype:a[0],description:a[1],strength:35+Math.floor(r()*46),founded:1985+Math.floor(r()*35),isMajor:true};});
+ const factions:Faction[]=archetypes.map((a,i)=>{let name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];while(usedFactionNames.has(name))name=nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)];usedFactionNames.add(name);return {id:"major-"+(i+1),name,archetype:a[0],description:a[1],strength:35+Math.floor(r()*46),founded:1985+Math.floor(r()*35),isMajor:true,cohesion:55+Math.floor(r()*40),treasury:180+Math.floor(r()*320)};});
  const localCount=8+Math.floor(r()*3);
- for(let i=0;i<localCount;i++) factions.push({id:"local-"+(i+1),name:localNames[i%localNames.length],archetype:"地方網絡",description:"由地方人物與社群關係逐步形成的虛構地方組織。",strength:12+Math.floor(r()*24),founded:2005+Math.floor(r()*20),isMajor:false});
+ for(let i=0;i<localCount;i++) factions.push({id:"local-"+(i+1),name:localNames[i%localNames.length],archetype:"地方網絡",description:"由地方人物與社群關係逐步形成的虛構地方組織。",strength:12+Math.floor(r()*24),founded:2005+Math.floor(r()*20),isMajor:false,cohesion:50+Math.floor(r()*35),treasury:45+Math.floor(r()*100)});
  const districts:District[]=[]; let index=0;
  for(const county of counties){const used=new Set<string>();for(let j=0;j<county.districts;j++){let name=pick(r,districtWords);let attempts=0;while(used.has(name)&&attempts++<30)name=pick(r,districtWords);used.add(name);districts.push({id:"d-"+String(++index).padStart(3,"0"),countyId:county.id,name,population:Math.round(8+r()*52),economy:Math.round(15+r()*85),development:Math.round(20+r()*80),stability:Math.round(45+r()*50),governmentAttention:Math.round(5+r()*55),controllerId:null,influences:{},status:"unclaimed"});}}
  const order=shuffle(r,districts);
@@ -45,7 +48,10 @@ export function createWorld(seed:number,difficulty:"standard"="standard"):WorldS
  order.slice(40,52).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
  order.slice(52,70).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
  for(const d of districts){if(d.controllerId){for(const f of shuffle(r,factions.filter(f=>f.id!==d.controllerId)).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);} }
- return {schemaVersion:1,generatorVersion:"0.2.0",seed,name:"江湖世界・"+seed,day:1,difficulty,counties,factions,districts,history:["世界建立：各地區的地方網絡與組織開始形成新的局勢。"],createdAt:new Date().toISOString()};
+ const people = factions.map((f,i)=>({id:"person-"+f.id+"-leader",name:["陳文岳","周明哲","林志遠","許家豪","郭承恩","黃柏勳","吳建宏","張立群","蔡宗翰","鄭宇翔"][i%10],age:38+Math.floor(r()*24),factionId:f.id,role:"領導者",leadership:45+Math.floor(r()*50),management:40+Math.floor(r()*55),diplomacy:35+Math.floor(r()*60),loyalty:65+Math.floor(r()*30),health:75+Math.floor(r()*25),status:"active" as const}));
+ const relationships = factions.flatMap((f,i)=>factions.slice(i+1).map(other=>{const score=Math.floor(r()*61)-30;return {fromFactionId:f.id,toFactionId:other.id,score,status:(score>=45?"friendly":score<=-35?"rival":"neutral") as "friendly"|"rival"|"neutral"};}));
+ const events = [{id:"event-1",day:1,category:"community" as const,title:"新局勢形成",description:"各地地方網絡開始觀察新世界的變化，新的合作與競爭關係逐漸浮現。"}];
+ return {schemaVersion:2,generatorVersion:"1.0.0",seed,name:"江湖世界・"+seed,day:1,difficulty,counties,factions,districts,people,relationships,events,history:["世界建立：各地區的地方網絡與組織開始形成新的局勢。"],createdAt:new Date().toISOString()};
 }
 export function seedFromNow(){return (Date.now() ^ Math.floor(Math.random()*0xffffffff))>>>0;}
 export function countWorld(world:WorldState){return {districts:world.districts.length,controlled:world.districts.filter(d=>d.controllerId).length,neutral:world.districts.filter(d=>d.status==="neutral").length,unclaimed:world.districts.filter(d=>d.status==="unclaimed").length,factions:world.factions.length};}
