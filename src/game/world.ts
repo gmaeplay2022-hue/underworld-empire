@@ -4,10 +4,10 @@ export type District = { id: string; countyId: string; name: string; population:
 export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string }; schemaVersion: 1; generatorVersion: "0.2.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; history: string[]; createdAt: string };
 
 const countyRows: Array<[string,string,number,number,number]> = [
-  ["taipei","台北市",6,3,1],["new-taipei","新北市",6,4,2],["keelung","基隆市",3,5,2],["taoyuan","桃園市",5,3,3],["hsinchu-city","新竹市",3,2,4],["hsinchu-county","新竹縣",5,3,5],
-  ["miaoli","苗栗縣",4,3,6],["taichung","台中市",6,3,7],["changhua","彰化縣",5,3,8],["nantou","南投縣",4,4,8],["yunlin","雲林縣",4,3,9],
-  ["chiayi-city","嘉義市",3,3,10],["chiayi-county","嘉義縣",4,4,10],["tainan","台南市",5,3,11],["kaohsiung","高雄市",6,3,12],["pingtung","屏東縣",5,4,13],
-  ["yilan","宜蘭縣",5,5,4],["hualien","花蓮縣",4,5,7],["taitung","台東縣",4,5,10],["penghu","澎湖縣",3,2,13],["kinmen","金門縣",3,1,14],["lienchiang","連江縣",3,1,15]
+  ["taipei","台北市",6,9,2],["new-taipei","新北市",6,8,3],["keelung","基隆市",3,11,2],["taoyuan","桃園市",5,7,4],["hsinchu-city","新竹市",3,6,5],["hsinchu-county","新竹縣",5,8,5],
+  ["miaoli","苗栗縣",4,7,6],["taichung","台中市",6,8,7],["changhua","彰化縣",5,7,8],["nantou","南投縣",4,9,8],["yunlin","雲林縣",4,7,9],
+  ["chiayi-city","嘉義市",3,8,10],["chiayi-county","嘉義縣",4,9,10],["tainan","台南市",5,8,11],["kaohsiung","高雄市",6,9,12],["pingtung","屏東縣",5,10,13],
+  ["yilan","宜蘭縣",5,12,4],["hualien","花蓮縣",4,12,7],["taitung","台東縣",4,12,10],["penghu","澎湖縣",3,3,10],["kinmen","金門縣",3,2,13],["lienchiang","連江縣",3,4,1]
 ];
 export const COUNTY_DEFINITIONS: County[] = countyRows.map(([id,name,districts,x,y],i)=>({id,name,region:i<6?"北部":i<11?"中部":i<16?"南部":i<19?"東部":"離島",districts,x,y,economy:0,population:0}));
 export const INITIAL_DISTRICT_COUNT = COUNTY_DEFINITIONS.reduce((n,c)=>n+c.districts,0);
