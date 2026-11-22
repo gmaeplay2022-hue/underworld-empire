@@ -31,10 +31,13 @@ export function saveWorld(slot:number,world:WorldState):Promise<void>{
  });
 }
 export async function loadWorld(slot:number):Promise<WorldState|null>{
- const queued=writeQueues.get(slot);if(queued)await queued.catch(()=>{});
- const db=await openDb();
- try{const value=await new Promise<SaveSlot|undefined>((resolve,reject)=>{const request=db.transaction(STORE).objectStore(STORE).get(slot);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});return value?.world?migrateWorld(value.world):null;}
- finally{db.close();}
+ let saved:SaveSlot|undefined;
+ await enqueueSlotWrite(writeQueues,slot,async()=>{
+  const db=await openDb();
+  try{saved=await new Promise<SaveSlot|undefined>((resolve,reject)=>{const request=db.transaction(STORE).objectStore(STORE).get(slot);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
+  finally{db.close();}
+ });
+ return saved?.world?migrateWorld(saved.world):null;
 }
 export async function listSaves():Promise<Array<{slot:number;label:string;savedAt:string}>>{
  await Promise.all([...writeQueues.values()].map(p=>p.catch(()=>{})));
