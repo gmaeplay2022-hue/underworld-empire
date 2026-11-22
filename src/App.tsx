@@ -8,10 +8,10 @@ const chapters = [
   {
     eyebrow: "第一章・雨夜的約定",
     title: "一張沒有署名的名片",
-    location: "台灣・台北市・萬華區",
+    location: "台灣・新竹縣・新豐鄉",
     date: "2026 年 11 月 22 日｜晚上 21:40",
     paragraphs: [
-      "雨水沿著騎樓鐵皮滴落。二十九歲的林奕辰站在老公寓二樓，望著桌上那張褪色的黑白照片。",
+      "雨水沿著騎樓鐵皮滴落。二十九歲的{displayName}站在老公寓二樓，望著桌上那張褪色的黑白照片。",
       "三天前，帶他長大的地方前輩突然病倒。留下的不是什麼龐大帝國，而是一間快付不出租金的茶行、幾個仍願意留下的老朋友，以及一群對未來沒有把握的人。",
       "今晚，街口的阿凱帶來消息：附近幾個地方勢力都在觀望，想知道這個小團體接下來由誰作主。奕辰明白，第一步若走錯，大家可能就散了。",
       "桌上的手機亮起。前輩傳來最後一段語音：「不要只想著讓人怕你。要想清楚，等風雨過去，還有誰願意站在你身邊。」"
@@ -26,7 +26,7 @@ const chapters = [
   {
     eyebrow: "第二章・留下來的人",
     title: "信任不是免費的",
-    location: "台灣・台北市・大同區",
+    location: "台灣・新竹縣・新豐鄉",
     date: "2026 年 11 月 23 日｜上午 10:15",
     paragraphs: [
       "隔天早上，茶行的鐵門才拉起一半，阿凱便帶著兩個人走進來。有人想離開，有人想把剩下的資源分一分，也有人主張先找一個靠山。",
@@ -44,14 +44,14 @@ const chapters = [
 
 const initialStats: Stats = { reputation: 18, trust: 42, cash: 24, heat: 8 };
 
-export default function App() {
+export default function App() {\n  const [protagonistName, setProtagonistName] = useState("");
   const [mode, setMode] = useState<"world" | "story">("world");
   const [chapterIndex, setChapterIndex] = useState(0);
   const [stats, setStats] = useState<Stats>(initialStats);
-  const [log, setLog] = useState<string[]>(["故事開始：林奕辰接下了前輩留下的小型地方組織。"]);
+  const [log, setLog] = useState<string[]>([`故事開始：${displayName}接下了前輩留下的小型地方組織。`]);
   const [selected, setSelected] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const chapter = chapters[chapterIndex];
+  const chapter = chapters[chapterIndex];\n  const displayName = protagonistName.trim();
   const completed = chapterIndex >= chapters.length;
   const progress = useMemo(() => Math.round((chapterIndex / chapters.length) * 100), [chapterIndex]);
 
@@ -77,12 +77,12 @@ export default function App() {
   function restart() {
     setChapterIndex(0);
     setStats(initialStats);
-    setLog(["故事開始：林奕辰接下了前輩留下的小型地方組織。"]);
+    setLog(["故事開始：{displayName}接下了前輩留下的小型地方組織。"]);
     setSelected(null);
     setShowResult(false);
   }
 
-  return mode === "world" ? <WorldGame onStory={() => setMode("story")} /> : (
+  return mode === "world" ? <WorldGame onStory={(name) => { setProtagonistName(name); setMode("story"); }} /> : !displayName ? (\n    <main className="shell"><section className="panel"><div className="kicker">STORY MODE · CHARACTER SETUP</div><h1>建立你的江湖人生</h1><p>請輸入主角姓名。姓名是唯一可自訂的角色欄位；出生與成長背景固定為新竹縣新豐鄉。</p><form onSubmit={(event) => { event.preventDefault(); const field = new FormData(event.currentTarget).get("protagonistName"); if (typeof field === "string" && field.trim()) setProtagonistName(field.trim()); }}><label>主角姓名<input name="protagonistName" required maxLength={20} autoComplete="off" /></label><button className="primary" type="submit">開始故事 →</button></form><button onClick={() => setMode("world")}>返回世界入口</button></section></main>\n  ) : (
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-mark">江</span><span>JIANGHU<small>江湖・故事模式</small></span></a>
@@ -111,7 +111,7 @@ export default function App() {
         <section className="ending panel">
           <div className="kicker">PROLOGUE COMPLETE</div>
           <h2>序章告一段落</h2>
-          <p>林奕辰的故事才剛開始。你已經做出最初的選擇，也為這個小團體定下了第一個方向。</p>
+          <p>{displayName}的故事才剛開始。你已經做出最初的選擇，也為這個小團體定下了第一個方向。</p>
           <p className="muted">後續章節將延伸人物關係、地方網絡、組織治理與多線結局。這是目前可遊玩的序章版本。</p>
           <button className="primary" onClick={restart}>重新體驗序章</button>
         </section>
@@ -121,7 +121,7 @@ export default function App() {
             <div className="story-meta"><span>{chapter.eyebrow}</span><span>{chapter.date}</span></div>
             <div className="scene-image"><div className="scene-overlay"><span>SCENE 0{chapterIndex + 1}</span><b>{chapter.location}</b></div></div>
             <h2>{chapter.title}</h2>
-            <div className="narrative">{chapter.paragraphs.map((p, i) => <p key={i}>{p}</p>)}</div>
+            <div className="narrative">{chapter.paragraphs.map((p, i) => <p key={i}>{p.replaceAll("林奕辰", displayName).replaceAll("奕辰", displayName)}</p>)}</div>
             <div className="choice-area">
               <h3>{chapter.prompt}</h3>
               <div className="choices">
@@ -139,9 +139,9 @@ export default function App() {
             <section className="panel character">
               <div className="section-head"><span>主角檔案</span><span className="live-dot">● 故事進行中</span></div>
               <div className="portrait"><span>林</span><i>FICTIONAL CHARACTER</i></div>
-              <h3>林奕辰</h3><p className="role">地方組織代理負責人</p>
+              <h3>{displayName}</h3><p className="role">地方組織代理負責人</p>
               <div className="bio-row"><span>年齡</span><b>29 歲</b></div>
-              <div className="bio-row"><span>出身</span><b>台北・萬華</b></div>
+              <div className="bio-row"><span>出身</span><b>新竹縣・新豐鄉</b></div>
               <div className="bio-row"><span>性格</span><b>冷靜、重情、謹慎</b></div>
               <div className="bio-row"><span>目標</span><b>守住夥伴與立足之地</b></div>
             </section>
