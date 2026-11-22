@@ -31,6 +31,7 @@ test("a player can create a world, start an organization, advance a day and relo
   await page.getByRole("button", { name: /結束今天/ }).click();
   await expect(page.locator(".world-heading")).toContainText("第 2 天");
   await page.locator(".save-slot-actions").getByRole("button", { name: "儲存至 01" }).click();
+  await expect(page.locator(".world-message")).toContainText("已儲存至存檔 01");
 
   await page.reload();
   const manualSave = page.locator(".save-row").filter({ hasText: "存檔 01" });
