@@ -41,3 +41,14 @@ test("a player can create a world, start an organization, advance a day and relo
   await expect(page.locator(".player-banner")).toContainText("雨城共好會");
   await expect(page.locator(".world-heading")).toContainText("第 2 天");
 });
+
+test("the world map remains usable at a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.locator("#seed").fill("20261123");
+  await page.getByRole("button", { name: /生成新世界/ }).click();
+  await expect(page.locator(".county-map")).toBeVisible();
+  await expect(page.locator(".district-panel")).toBeVisible();
+  const mapWidth = await page.locator(".county-map").evaluate(element => element.getBoundingClientRect().width);
+  expect(mapWidth).toBeGreaterThan(0);
+});
