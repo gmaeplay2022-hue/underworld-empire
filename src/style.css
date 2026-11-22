@@ -49,3 +49,7 @@ button{font:inherit}.shell{max-width:1180px;margin:auto;padding:0 34px}.topbar{h
 .event-feed article b{font-size:13px}
 .event-feed article p{font-size:11px;line-height:1.7;color:#bcb2a5;margin:6px 0 0}
 @media(max-width:620px){.event-feed{grid-template-columns:1fr}.world-heading-actions{flex-wrap:wrap}}
+
+.event-choices{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.event-choices button{padding:7px 9px;background:#302820;border:1px solid #9a754f;color:#e8c9a5;border-radius:5px;font-size:10px;cursor:pointer}
+.event-choices button:hover{background:#493827}
