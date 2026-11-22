@@ -14,7 +14,9 @@ export function advanceDay(world:WorldState):TurnResult{
  const current=world.playerStats??initialPlayerStats();const controlled=world.districts.filter(d=>d.controllerId==="player");
  const income=current.dailyIncome+controlled.reduce((sum,d)=>sum+Math.floor(d.economy*.025),0);const upkeep=current.dailyUpkeep+Math.max(0,Math.floor((controlled.length-1)/4));const cash=Math.max(0,current.cash+income-upkeep);const day=world.day+1;
  const playerStats={...current,cash,reputation:clamp(current.reputation+(controlled.length?1:0)),trust:clamp(current.trust+(current.cash>=upkeep?1:-2)),publicPressure:clamp(current.publicPressure+(controlled.some(d=>d.stability<42)?2:-1))};
- const districts=world.districts.map(d=>({...d,influences:{...d.influences}}));const factions=world.factions.map(f=>({...f}));let relationships=[...world.relationships];let people=world.people.map(p=>({...p,age:p.age+(day%365===0?1:0),health:clamp(p.health-(day%30===0?1:0))}));const generatedEvents:WorldEvent[]=[];
+ const districts=world.districts.map(d=>({...d,influences:{...d.influences}}));const factions=world.factions.map(f=>({...f}));let relationships=[...world.relationships];let people=world.people.map(p=>{const age=p.age+(day%365===0?1:0);const health=clamp(p.health-(day%30===0?1:0));const retired=p.status==="active"&&(age>=78||health<=0);return {...p,age,health,status:retired?"retired" as const:p.status};});const generatedEvents:WorldEvent[]=[];
+ const retiredLeaders=people.filter((p,i)=>p.role.includes("領導者")&&p.status==="retired"&&world.people[i].status==="active");
+ for(const retired of retiredLeaders){let successor=people.find(p=>p.factionId===retired.factionId&&p.familyId===retired.familyId&&p.status==="active");if(successor){people=people.map(p=>p.id===successor?.id?{...p,role:"接任領導者"}:p);}else{const id="person-successor-"+retired.id+"-"+day;successor={id,name:["林承岳","陳以晴","周家睿","許安然","沈柏廷"][((world.seed+day+retired.id.length)%5)],age:18,generation:retired.generation+1,factionId:retired.factionId,familyId:retired.familyId,parentIds:[retired.id],role:"新任領導者",leadership:45,management:48,diplomacy:50,loyalty:85,health:100,status:"active"};people.push(successor);}generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","家族世代交替",retired.name+"卸下領導職務，"+(successor?.name??"新任接班人")+"接續組織責任。"));}
  for(const faction of factions.filter(f=>f.id!=="player")){
   const target=districts.filter(d=>d.status!=="controlled"||d.controllerId===faction.id||(d.controllerId==="player"&&relationScore({...world,relationships},faction.id,"player")<=-30)).sort((a,b)=>(a.influences[faction.id]??0)-(b.influences[faction.id]??0))[0];
   if(target){const drift=1+((world.seed+day*11+faction.id.length*7+target.id.length)%3);target.influences[faction.id]=clamp((target.influences[faction.id]??0)+drift);
@@ -28,7 +30,7 @@ export function advanceDay(world:WorldState):TurnResult{
  if(day%30===0&&factions.filter(f=>!f.isMajor&&f.id!=="player").length<18&&districts.some(d=>d.status==="unclaimed"&&!d.controllerId)){
   const n=factions.filter(f=>!f.isMajor&&f.id!=="player").length+1;const id="emergent-"+day;const name=["新城共好社群","青禾地方聯盟","海風文化協會","城南生活網絡","山海青年會"][n%5]+" "+n;
   factions.push({id,name,archetype:"新興地方網絡",description:"由地方居民與新世代人物自然形成的虛構組織。",strength:16+((world.seed+day)%18),founded:2026+Math.floor(day/365),isMajor:false,cohesion:60,treasury:55});
-  people.push({id:"person-"+id+"-leader",name:["葉以安","陳思妤","高子維","林沛蓉","周柏廷"][n%5],age:25+(n%18),factionId:id,role:"創始召集人",leadership:45+(n%25),management:48+(n%27),diplomacy:52+(n%24),loyalty:80,health:100,status:"active"});
+  people.push({id:"person-"+id+"-leader",name:["葉以安","陳思妤","高子維","林沛蓉","周柏廷"][n%5],age:25+(n%18),factionId:id,familyId:"family-"+id,generation:1,parentIds:[],role:"創始召集人",leadership:45+(n%25),management:48+(n%27),diplomacy:52+(n%24),loyalty:80,health:100,status:"active"});
   for(const other of factions.filter(f=>f.id!==id))relationships.push({fromFactionId:id,toFactionId:other.id,score:0,status:"neutral"});
   generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","新興地方網絡成立",name+"由地方社群逐步凝聚成形，成為新的世界參與者。"));
  }
@@ -61,7 +63,7 @@ export function recruitPerson(world:WorldState):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const current=world.playerStats??initialPlayerStats();const roster=world.people.filter(p=>p.factionId==="player"&&p.status==="active");
  if(roster.length>=8)return {world,message:"核心幹部已達 8 人上限。"};if(current.cash<30)return {world,message:"資金不足，需要 30 點招募資源。"};
  const names=["沈以安","方承志","江若彤","葉書廷","高予晴","邱柏翰","宋品妍","杜明軒","簡沛瑜","許庭維"];const index=(world.seed+world.day+roster.length*7)%names.length;
- const person:Person={id:"person-player-"+(roster.length+1),name:names[index],age:24+(world.seed+world.day)%24,factionId:"player",role:"核心幹部",leadership:40+(world.seed%31),management:45+((world.seed+17)%31),diplomacy:40+((world.seed+29)%31),loyalty:68,health:100,status:"active"};
+ const person:Person={id:"person-player-"+(roster.length+1),name:names[index],age:24+(world.seed+world.day)%24,factionId:"player",familyId:"family-staff-"+(roster.length+1),generation:1,parentIds:[],role:"核心幹部",leadership:40+(world.seed%31),management:45+((world.seed+17)%31),diplomacy:40+((world.seed+29)%31),loyalty:68,health:100,status:"active"};
  const playerStats={...current,cash:current.cash-30,trust:clamp(current.trust+2),dailyUpkeep:current.dailyUpkeep+1};const msg="新幹部「"+person.name+"」加入組織，擅長管理與協調。";
  return {world:{...world,people:[...world.people,person],playerStats,history:record(world,msg)},message:msg};
 }
