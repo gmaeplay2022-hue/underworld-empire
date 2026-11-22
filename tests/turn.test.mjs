@@ -5,7 +5,7 @@ import { createWorld } from "../src/game/world.ts";
 
 function playerWorld() {
   const world = createWorld(42);
-  const district = world.districts.find(d => d.status !== "controlled")!;
+  const district = world.districts.find(d => d.status !== "controlled");
   district.controllerId = "player";
   district.status = "controlled";
   district.influences.player = 82;
