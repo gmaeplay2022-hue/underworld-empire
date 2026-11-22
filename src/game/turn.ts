@@ -17,6 +17,19 @@ export function advanceDay(world:WorldState):TurnResult{
  const districts=world.districts.map(d=>{const playerControlled=d.controllerId==="player";const attention=playerControlled?clamp(d.governmentAttention+(playerStats.publicPressure>=55?2:playerStats.publicPressure<=25?-1:0)):d.governmentAttention;return {...d,governmentAttention:attention,stability:playerControlled&&attention>=80?clamp(d.stability-1):d.stability,influences:{...d.influences}};});const factions=world.factions.map(f=>({...f}));let relationships=[...world.relationships];let people=world.people.map(p=>{const age=p.age+(day%365===0?1:0);const health=clamp(p.health-(day%180===0?1:0));const retired=p.status==="active"&&(age>=78||health<=0);return {...p,age,health,status:retired?"retired" as const:p.status};});const generatedEvents:WorldEvent[]=[];
  const retiredLeaders=people.filter((p,i)=>p.role.includes("領導者")&&p.status==="retired"&&world.people[i].status==="active");
  for(const retired of retiredLeaders){let successor=people.find(p=>p.factionId===retired.factionId&&p.familyId===retired.familyId&&p.status==="active");if(successor){people=people.map(p=>p.id===successor?.id?{...p,role:"接任領導者"}:p);}else{const id="person-successor-"+retired.id+"-"+day;successor={id,name:["林承岳","陳以晴","周家睿","許安然","沈柏廷"][((world.seed+day+retired.id.length)%5)],age:18,generation:retired.generation+1,factionId:retired.factionId,familyId:retired.familyId,parentIds:[retired.id],role:"新任領導者",leadership:45,management:48,diplomacy:50,loyalty:85,health:100,status:"active"};people.push(successor);}if(retired.factionId==="player"&&player)player.leaderName=successor.name;generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","家族世代交替",retired.name+"卸下領導職務，"+(successor?.name??"新任接班人")+"接續組織責任。"));}
+ if(day%365===0){
+  for(const faction of factions.filter(f=>f.isMajor&&f.id!=="player")){
+   const turnoverSignal=(world.seed+day+faction.id.length*17)%7;
+   const cadres=people.filter(p=>p.factionId===faction.id&&p.role==="核心幹部"&&p.status==="active").sort((a,b)=>a.loyalty-b.loyalty);
+   if(cadres.length&&faction.cohesion<58&&turnoverSignal===0){
+    const departing=cadres[0];people=people.map(p=>p.id===departing.id?{...p,status:"retired" as const,role:"離任幹部"}:p);
+    const candidates=people.filter(p=>p.factionId===faction.id&&p.role==="重要成員"&&p.status==="active").sort((a,b)=>b.management-a.management);
+    if(candidates[0])people=people.map(p=>p.id===candidates[0].id?{...p,role:"核心幹部",loyalty:clamp(p.loyalty+5)}:p);
+    const eventText=departing.name+"離開核心管理層，組織依現有人才重新分配職責。";
+    generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","核心幹部人事調整",faction.name+"："+eventText));
+   }
+  }
+ }
  for(const faction of factions.filter(f=>f.id!=="player")){
   const target=districts.filter(d=>d.status!=="controlled"||d.controllerId===faction.id||(d.controllerId==="player"&&relationScore({...world,relationships},faction.id,"player")<=-30)).sort((a,b)=>(a.influences[faction.id]??0)-(b.influences[faction.id]??0))[0];
   if(target){const drift=1+((world.seed+day*11+faction.id.length*7+target.id.length)%3);target.influences[faction.id]=clamp((target.influences[faction.id]??0)+drift);if(target.controllerId==="player")target.influences.player=clamp((target.influences.player??0)-Math.max(1,Math.floor(drift/2)));
