@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import WorldGame from "./WorldGame";
 
 type Stats = { reputation: number; trust: number; cash: number; heat: number };
 type Choice = { label: string; description: string; result: string; delta: Partial<Stats>; next?: string };
@@ -44,6 +45,7 @@ const chapters = [
 const initialStats: Stats = { reputation: 18, trust: 42, cash: 24, heat: 8 };
 
 export default function App() {
+  const [mode, setMode] = useState<"world" | "story">("world");
   const [chapterIndex, setChapterIndex] = useState(0);
   const [stats, setStats] = useState<Stats>(initialStats);
   const [log, setLog] = useState<string[]>(["故事開始：林奕辰接下了前輩留下的小型地方組織。"]);
@@ -80,11 +82,11 @@ export default function App() {
     setShowResult(false);
   }
 
-  return (
+  return mode === "world" ? <WorldGame onStory={() => setMode("story")} /> : (
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-mark">江</span><span>JIANGHU<small>江湖・故事模式</small></span></a>
-        <div className="top-actions"><span className="mode-pill">單人劇情</span><span className="chapter-count">第 {Math.min(chapterIndex + 1, chapters.length)} / {chapters.length} 章</span></div>
+        <div className="top-actions"><button className="mode-pill" onClick={() => setMode("world")}>世界地圖</button><span className="mode-pill">單人劇情</span><span className="chapter-count">第 {Math.min(chapterIndex + 1, chapters.length)} / {chapters.length} 章</span></div>
       </header>
 
       <section className="hero">
