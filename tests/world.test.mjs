@@ -41,3 +41,39 @@ test("each district has at most one controller and a separate influence map", ()
     if (district.controllerId) assert.ok(district.influences[district.controllerId] >= 50);
   }
 });
+
+test("V1.1 generates the approved eight faction archetypes and complete character rosters", () => {
+  const world = createWorld(20261122);
+  const major = world.factions.filter(faction => faction.isMajor);
+  const counts = major.reduce((result, faction) => {
+    result[faction.archetype] = (result[faction.archetype] ?? 0) + 1;
+    return result;
+  }, {});
+  assert.equal(counts["地方組織"], 2);
+  assert.equal(counts["商業勢力"], 1);
+  assert.equal(counts["地方派系"], 1);
+  assert.equal(counts["產業勢力"], 1);
+  assert.equal(counts["地下勢力"], 2);
+  assert.equal(counts["外來勢力"], 1);
+  for (const faction of major) {
+    assert.ok(world.people.some(person => person.factionId === faction.id && person.role === "領導者"));
+    assert.ok(world.people.filter(person => person.factionId === faction.id && person.role === "核心幹部").length >= 2);
+    assert.ok(world.people.filter(person => person.factionId === faction.id && person.role === "重要成員").length >= 3);
+    assert.ok(faction.headquartersCountyId);
+  }
+  assert.ok(["商業競逐型","地方派系型","產業發展型","權力競爭型","外來勢力型"].includes(world.worldTendency));
+  assert.equal(world.generatorVersion, "1.1.0");
+});
+
+test("V1.1 preserves balanced territory counts and places active major factions at their headquarters", () => {
+  const world = createWorld(20261122);
+  const counts = countWorld(world);
+  assert.equal(counts.controlled, 52);
+  assert.equal(counts.neutral, 18);
+  assert.equal(counts.unclaimed, 26);
+  for (const faction of world.factions.filter(item => item.isMajor)) {
+    if (world.districts.some(district => district.controllerId === faction.id)) {
+      assert.ok(world.districts.some(district => district.controllerId === faction.id && district.countyId === faction.headquartersCountyId));
+    }
+  }
+});
