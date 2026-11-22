@@ -9,7 +9,7 @@ export default function WorldGame({onStory}:{onStory:(name:string)=>void}){
  const [seedInput,setSeedInput]=useState(""); const [organizationName,setOrganizationName]=useState("新生組織"); const [leaderName,setLeaderName]=useState("");
  const stats=useMemo(()=>world?countWorld(world):null,[world]);
  useEffect(()=>{listAllWorldSaves().then(setWorldLibrary).catch(()=>setMessage("無法讀取本機世界存檔。"));},[]);
- useEffect(()=>{if(!world)return;const timer=window.setTimeout(()=>{saveAuto(world).then(()=>listWorldSaves(world).then(setSlots)).catch(()=>setMessage("自動儲存失敗，請立即下載備份。"));},1200);return()=>window.clearTimeout(timer);},[world]);
+ useEffect(()=>{if(!world)return;const timer=window.setTimeout(()=>{saveAuto(world).then(()=>Promise.all([listWorldSaves(world).then(setSlots),listAllWorldSaves().then(setWorldLibrary)])).catch(()=>setMessage("自動儲存失敗，請立即下載備份。"));},1200);return()=>window.clearTimeout(timer);},[world]);
  useEffect(()=>{if(world)listWorldSaves(world).then(setSlots).catch(()=>setMessage("無法讀取本機存檔。"));},[world?.seed,world?.createdAt]);
  useEffect(()=>{if(!world)return;const flush=()=>{void saveAuto(world).catch(()=>{});};const onVisibility=()=>{if(document.visibilityState==="hidden")flush();};window.addEventListener("pagehide",flush);document.addEventListener("visibilitychange",onVisibility);return()=>{window.removeEventListener("pagehide",flush);document.removeEventListener("visibilitychange",onVisibility);};},[world]);
  const county=world?.counties.find(c=>c.id===selectedCounty); const districts=world?.districts.filter(d=>d.countyId===selectedCounty)??[]; const district=world?.districts.find(d=>d.id===selectedDistrict)??districts[0];
