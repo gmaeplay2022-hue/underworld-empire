@@ -3,7 +3,7 @@ const DB_NAME="jianghu-local";const DB_VERSION=2;const STORE="worlds";
 function openDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const request=indexedDB.open(DB_NAME,DB_VERSION);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:"slot"});};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
 export type SaveSlot={slot:number;label:string;world:WorldState;savedAt:string};
 const clamp=(n:number)=>Math.max(0,Math.min(100,Number.isFinite(n)?n:50));
-function migrateWorld(input:unknown):WorldState{
+export function migrateWorld(input:unknown):WorldState{
  if(!input||typeof input!=="object")throw new Error("存檔格式錯誤");
  const raw=input as Partial<WorldState>&{factions?:Array<Partial<Faction>&{id:string}>;people?:Person[];relationships?:Relationship[];events?:WorldEvent[]};
  if(!Array.isArray(raw.counties)||!Array.isArray(raw.districts)||!Array.isArray(raw.factions))throw new Error("存檔缺少必要世界資料");
