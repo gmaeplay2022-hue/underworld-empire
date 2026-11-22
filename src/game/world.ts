@@ -59,8 +59,9 @@ export function createWorld(seed:number,difficulty:"standard"="standard"):WorldS
  headquarterDistricts.forEach((d,i)=>{const f=activeMajors[i];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=65+Math.floor(r()*26);});
  const remainingMajorDistricts=order.filter(d=>!d.controllerId).slice(0,Math.max(0,40-headquarterDistricts.length));
  remainingMajorDistricts.forEach((d,i)=>{const f=activeMajors[i%activeMajors.length];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
- order.slice(40,52).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
- order.slice(52,70).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
+ const remainingAfterMajor=shuffle(r,districts.filter(d=>!d.controllerId));
+ remainingAfterMajor.slice(0,12).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
+ remainingAfterMajor.slice(12,30).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
  for(const d of districts){if(d.controllerId){for(const f of shuffle(r,factions.filter(f=>f.id!==d.controllerId)).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);}}
  const people:Person[]=[];
  for(const f of factions){const leader=makePerson(r,"person-"+f.id+"-leader",f.id,"領導者",38+Math.floor(r()*24),"family-"+f.id);people.push(leader);const cadreCount=2+Math.floor(r()*2);for(let i=0;i<cadreCount;i++)people.push(makePerson(r,"person-"+f.id+"-cadre-"+(i+1),f.id,"核心幹部",29+Math.floor(r()*27),"family-"+f.id));const memberCount=3+Math.floor(r()*3);for(let i=0;i<memberCount;i++)people.push(makePerson(r,"person-"+f.id+"-member-"+(i+1),f.id,"重要成員",22+Math.floor(r()*35),"family-"+f.id));}
