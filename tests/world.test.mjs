@@ -77,3 +77,11 @@ test("V1.1 preserves balanced territory counts and places active major factions 
     }
   }
 });
+
+test("V1.1 generates independent local and institutional key figures", () => {
+  const world = createWorld(20261122);
+  assert.equal(world.people.filter(person => person.role === "地方關鍵人物").length, 6);
+  for (const role of ["政治人物","行政人物","執法人員","司法人物"]) {
+    assert.equal(world.people.filter(person => person.role === role).length, 1);
+  }
+});
