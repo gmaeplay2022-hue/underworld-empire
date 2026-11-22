@@ -67,3 +67,11 @@ test("weekly community events present choices and resolve exactly once",()=>{
  assert.match(repeated.message,/已處理/);
  assert.equal(repeated.world.playerStats.cash,weekly.playerStats.cash-12);
 });
+
+test("high public pressure raises government attention in player districts",()=>{
+ const world=startedWorld();world.playerStats.publicPressure=80;
+ const district=world.districts.find(d=>d.controllerId==="player");
+ const before=district.governmentAttention;
+ const result=advanceDay(world);
+ assert.equal(result.world.districts.find(d=>d.id===district.id).governmentAttention,Math.min(100,before+2));
+});
