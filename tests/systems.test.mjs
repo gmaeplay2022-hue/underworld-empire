@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { advanceDay, claimDistrict, negotiate, recruitPerson, resolveDispute, developDistrict, initialPlayerStats } from "../src/game/turn.ts";
+import { advanceDay, claimDistrict, negotiate, recruitPerson, resolveDispute, developDistrict, resolveWorldEvent, initialPlayerStats } from "../src/game/turn.ts";
 import { createWorld } from "../src/game/world.ts";
 
 function startedWorld(){
@@ -53,4 +53,17 @@ test("abstract territory disputes always charge the declared coordination cost",
  const result=resolveDispute(world,target.id);
  assert.equal(result.world.playerStats.cash,85);
  assert.ok(result.message.includes("協調"));
+});
+
+test("weekly community events present choices and resolve exactly once",()=>{
+ const world=startedWorld();world.day=6;
+ const weekly=advanceDay(world).world;
+ const pending=weekly.events.find(e=>e.day===7&&e.choices);
+ assert.ok(pending);
+ const result=resolveWorldEvent(weekly,pending.id,"support");
+ assert.equal(result.world.events.find(e=>e.id===pending.id).resolved,true);
+ assert.equal(result.world.playerStats.cash,108);
+ const repeated=resolveWorldEvent(result.world,pending.id,"support");
+ assert.match(repeated.message,/已處理/);
+ assert.equal(repeated.world.playerStats.cash,108);
 });
