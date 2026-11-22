@@ -42,8 +42,8 @@ export function createWorld(seed:number,difficulty:"standard"="standard"):WorldS
  order.slice(0,40).forEach((d,i)=>{const f=activeMajors[i%activeMajors.length];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
  order.slice(40,52).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
  order.slice(52,70).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
- for(const d of districts){if(d.controllerId){for(const f of factions.filter(f=>f.id!==d.controllerId).sort(()=>r()-.5).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);} }
- return {schemaVersion:1,generatorVersion:"0.2.0",seed,name:"新世界",day:1,difficulty,counties,factions,districts,history:["世界建立：各地區的地方網絡與組織開始形成新的局勢。"],createdAt:new Date().toISOString()};
+ for(const d of districts){if(d.controllerId){for(const f of shuffle(r,factions.filter(f=>f.id!==d.controllerId)).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);} }
+ return {schemaVersion:1,generatorVersion:"0.2.0",seed,name:"江湖世界・"+seed,day:1,difficulty,counties,factions,districts,history:["世界建立：各地區的地方網絡與組織開始形成新的局勢。"],createdAt:new Date().toISOString()};
 }
 export function seedFromNow(){return (Date.now() ^ Math.floor(Math.random()*0xffffffff))>>>0;}
 export function countWorld(world:WorldState){return {districts:world.districts.length,controlled:world.districts.filter(d=>d.controllerId).length,neutral:world.districts.filter(d=>d.status==="neutral").length,unclaimed:world.districts.filter(d=>d.status==="unclaimed").length,factions:world.factions.length};}
