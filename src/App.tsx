@@ -44,14 +44,16 @@ const chapters = [
 
 const initialStats: Stats = { reputation: 18, trust: 42, cash: 24, heat: 8 };
 
-export default function App() {\n  const [protagonistName, setProtagonistName] = useState("");
+export default function App() {
+  const [protagonistName, setProtagonistName] = useState("");
   const [mode, setMode] = useState<"world" | "story">("world");
   const [chapterIndex, setChapterIndex] = useState(0);
   const [stats, setStats] = useState<Stats>(initialStats);
-  const [log, setLog] = useState<string[]>([`故事開始：${displayName}接下了前輩留下的小型地方組織。`]);
+  const [log, setLog] = useState<string[]>(["故事尚未開始。"]);
   const [selected, setSelected] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const chapter = chapters[chapterIndex];\n  const displayName = protagonistName.trim();
+  const displayName = protagonistName.trim();
+  const chapter = chapters[chapterIndex];
   const completed = chapterIndex >= chapters.length;
   const progress = useMemo(() => Math.round((chapterIndex / chapters.length) * 100), [chapterIndex]);
 
@@ -77,12 +79,14 @@ export default function App() {\n  const [protagonistName, setProtagonistName] =
   function restart() {
     setChapterIndex(0);
     setStats(initialStats);
-    setLog(["故事開始：{displayName}接下了前輩留下的小型地方組織。"]);
+    setLog([`故事開始：${displayName}接下了前輩留下的小型地方組織。`]);
     setSelected(null);
     setShowResult(false);
   }
 
-  return mode === "world" ? <WorldGame onStory={(name) => { setProtagonistName(name); setMode("story"); }} /> : !displayName ? (\n    <main className="shell"><section className="panel"><div className="kicker">STORY MODE · CHARACTER SETUP</div><h1>建立你的江湖人生</h1><p>請輸入主角姓名。姓名是唯一可自訂的角色欄位；出生與成長背景固定為新竹縣新豐鄉。</p><form onSubmit={(event) => { event.preventDefault(); const field = new FormData(event.currentTarget).get("protagonistName"); if (typeof field === "string" && field.trim()) setProtagonistName(field.trim()); }}><label>主角姓名<input name="protagonistName" required maxLength={20} autoComplete="off" /></label><button className="primary" type="submit">開始故事 →</button></form><button onClick={() => setMode("world")}>返回世界入口</button></section></main>\n  ) : (
+  return mode === "world" ? <WorldGame onStory={(name) => { setProtagonistName(name); setLog([`故事開始：${name}接下了前輩留下的小型地方組織。`]); setMode("story"); }} /> : !displayName ? (
+    <main className="shell"><section className="panel"><div className="kicker">STORY MODE · CHARACTER SETUP</div><h1>建立你的江湖人生</h1><p>請輸入主角姓名。姓名是唯一可自訂的角色欄位；出生與成長背景固定為新竹縣新豐鄉。</p><form onSubmit={(event) => { event.preventDefault(); const field = new FormData(event.currentTarget).get("protagonistName"); if (typeof field === "string" && field.trim()) setProtagonistName(field.trim()); }}><label>主角姓名<input name="protagonistName" required maxLength={20} autoComplete="off" /></label><button className="primary" type="submit">開始故事 →</button></form><button onClick={() => setMode("world")}>返回世界入口</button></section></main>
+  ) : (
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="#"><span className="brand-mark">江</span><span>JIANGHU<small>江湖・故事模式</small></span></a>
@@ -121,7 +125,7 @@ export default function App() {\n  const [protagonistName, setProtagonistName] =
             <div className="story-meta"><span>{chapter.eyebrow}</span><span>{chapter.date}</span></div>
             <div className="scene-image"><div className="scene-overlay"><span>SCENE 0{chapterIndex + 1}</span><b>{chapter.location}</b></div></div>
             <h2>{chapter.title}</h2>
-            <div className="narrative">{chapter.paragraphs.map((p, i) => <p key={i}>{p.replaceAll("林奕辰", displayName).replaceAll("奕辰", displayName)}</p>)}</div>
+            <div className="narrative">{chapter.paragraphs.map((p, i) => <p key={i}>{p.replaceAll("{displayName}", displayName).replaceAll("奕辰", displayName)}</p>)}</div>
             <div className="choice-area">
               <h3>{chapter.prompt}</h3>
               <div className="choices">
@@ -138,7 +142,7 @@ export default function App() {\n  const [protagonistName, setProtagonistName] =
           <aside className="side-column">
             <section className="panel character">
               <div className="section-head"><span>主角檔案</span><span className="live-dot">● 故事進行中</span></div>
-              <div className="portrait"><span>林</span><i>FICTIONAL CHARACTER</i></div>
+              <div className="portrait"><span>{displayName.slice(0, 1)}</span><i>FICTIONAL CHARACTER</i></div>
               <h3>{displayName}</h3><p className="role">地方組織代理負責人</p>
               <div className="bio-row"><span>年齡</span><b>29 歲</b></div>
               <div className="bio-row"><span>出身</span><b>新竹縣・新豐鄉</b></div>
