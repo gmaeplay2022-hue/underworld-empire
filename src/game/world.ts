@@ -1,7 +1,7 @@
 export type County = { id: string; name: string; region: string; districts: number; x: number; y: number; economy: number; population: number };
 export type Faction = { id: string; name: string; archetype: string; description: string; strength: number; founded: number; isMajor: boolean };
 export type District = { id: string; countyId: string; name: string; population: number; economy: number; development: number; stability: number; governmentAttention: number; controllerId: string | null; influences: Record<string, number>; status: "controlled" | "neutral" | "unclaimed" };
-export type WorldState = { schemaVersion: 1; generatorVersion: "0.2.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; history: string[]; createdAt: string };
+export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string }; schemaVersion: 1; generatorVersion: "0.2.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; history: string[]; createdAt: string };
 
 const countyRows: Array<[string,string,number,number,number]> = [
   ["taipei","台北市",6,3,1],["new-taipei","新北市",6,4,2],["keelung","基隆市",3,5,2],["taoyuan","桃園市",5,3,3],["hsinchu-city","新竹市",3,2,4],["hsinchu-county","新竹縣",5,3,5],
@@ -32,13 +32,14 @@ function shuffle<T>(r:()=>number,items:T[]):T[]{const a=[...items];for(let i=a.l
 export function createWorld(seed:number,difficulty:"standard"="standard"):WorldState{
  const r=rng(seed); const counties=COUNTY_DEFINITIONS.map(c=>({...c,population:Math.round((35+r()*165)*1000),economy:Math.round(25+r()*75)}));
  const factions:Faction[]=archetypes.map((a,i)=>({id:"major-"+(i+1),name:nameA[Math.floor(r()*nameA.length)]+nameB[Math.floor(r()*nameB.length)],archetype:a[0],description:a[1],strength:35+Math.floor(r()*46),founded:1985+Math.floor(r()*35),isMajor:true}));
- const localCount=8+Math.floor(r()*5);
+ const localCount=8+Math.floor(r()*3);
  for(let i=0;i<localCount;i++) factions.push({id:"local-"+(i+1),name:localNames[i%localNames.length],archetype:"地方網絡",description:"由地方人物與社群關係逐步形成的虛構地方組織。",strength:12+Math.floor(r()*24),founded:2005+Math.floor(r()*20),isMajor:false});
  const districts:District[]=[]; let index=0;
  for(const county of counties){const used=new Set<string>();for(let j=0;j<county.districts;j++){let name=pick(r,districtWords);let attempts=0;while(used.has(name)&&attempts++<30)name=pick(r,districtWords);used.add(name);districts.push({id:"d-"+String(++index).padStart(3,"0"),countyId:county.id,name,population:Math.round(8+r()*52),economy:Math.round(15+r()*85),development:Math.round(20+r()*80),stability:Math.round(45+r()*50),governmentAttention:Math.round(5+r()*55),controllerId:null,influences:{},status:"unclaimed"});}}
  const order=shuffle(r,districts);
- // Balanced opening: 40 districts held by major factions, 12 by local groups, 18 neutral, 26 unclaimed.
- order.slice(0,40).forEach((d,i)=>{const f=factions[i%8];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
+ // Balanced opening: 40 districts held by a variable subset of major factions, 12 by local groups, 18 neutral, 26 unclaimed.
+ const activeMajors=shuffle(r,factions.slice(0,8)).slice(0,6+Math.floor(r()*3));
+ order.slice(0,40).forEach((d,i)=>{const f=activeMajors[i%activeMajors.length];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
  order.slice(40,52).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
  order.slice(52,70).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
  for(const d of districts){if(d.controllerId){for(const f of factions.filter(f=>f.id!==d.controllerId).sort(()=>r()-.5).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);} }
