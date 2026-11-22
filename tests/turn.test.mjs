@@ -39,7 +39,7 @@ test("policy actions charge their cost and apply bounded benefits", () => {
 
 test("policy actions reject unaffordable spending without changing state", () => {
   const world = playerWorld();
-  world.playerStats!.cash = 1;
+  world.playerStats.cash = 1;
   const result = applyPolicy(world, "development");
   assert.equal(result.world.playerStats?.cash, 1);
   assert.match(result.message, /資金不足/);
