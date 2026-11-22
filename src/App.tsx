@@ -89,7 +89,7 @@ export default function App() {
 
       <section className="hero">
         <div className="hero-copy">
-          <div className="kicker"><span /> TAIWAN · FICTIONAL UNDERWORLD CHRONICLE</div>
+          <div className="kicker"><span /> JIANGHU · FICTIONAL TAIWAN CHRONICLE</div>
           <h1>江湖</h1>
           <p>一座城市，無數選擇。真正的勢力，從人心開始。</p>
         </div>
