@@ -34,7 +34,7 @@ export function advanceDay(world:WorldState):TurnResult{
   for(const other of factions.filter(f=>f.id!==id))relationships.push({fromFactionId:id,toFactionId:other.id,score:0,status:"neutral"});
   generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","新興地方網絡成立",name+"由地方社群逐步凝聚成形，成為新的世界參與者。"));
  }
- if(day%7===0){const stable=districts.filter(d=>d.stability>=65).length;generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"community","地方週報","本週共有 "+stable+" 個地盤維持穩定。地方組織持續調整資源與人際關係。"));}
+ if(day%7===0){const stable=districts.filter(d=>d.stability>=65).length;generatedEvents.push({...event({...world,day,events:[...world.events,...generatedEvents]},"community","地方週報","本週共有 "+stable+" 個地盤維持穩定。地方社群邀請你的組織參與公共活動。"),choices:[{id:"support",label:"投入社區活動（12）"},{id:"organize",label:"召開內部協調（8）"},{id:"decline",label:"婉拒邀請"}],resolved:false});}
  if(day%365===0)generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","年度人事檢視","新的一年開始，各組織重新評估幹部責任與長期接班安排。"));
  const history=generatedEvents.reduce((h,e)=>[e.title+"："+e.description,...h].slice(0,150),record(world,"第 "+day+" 天結算：收入 "+income+"、維持支出 "+upkeep+"，可用資金 "+cash+"。"));
  return {world:{...world,day,player,playerStats,districts,factions,people,relationships,events:[...generatedEvents,...world.events].slice(0,80),history},message:"第 "+day+" 天結算完成：收入 "+income+"、支出 "+upkeep+"，AI 勢力與地方事件已更新。"};
@@ -82,4 +82,16 @@ export function developDistrict(world:WorldState,districtId:string):TurnResult{
  const current=world.playerStats??initialPlayerStats();if(current.cash<18)return {world,message:"資金不足，需要 18 點建設資源。"};
  const playerStats={...current,cash:current.cash-18,reputation:clamp(current.reputation+1)};const districts=world.districts.map(d=>d.id===districtId?{...d,development:clamp(d.development+7),stability:clamp(d.stability+4),economy:clamp(d.economy+3)}:d);
  const msg="完成「"+district.name+"」的地方建設，發展與穩定度提升。";return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
+}
+export function resolveWorldEvent(world:WorldState,eventId:string,choiceId:string):TurnResult{
+ if(!world.player)return {world,message:"請先建立玩家組織。"};
+ const target=world.events.find(e=>e.id===eventId);if(!target||target.resolved||!target.choices?.some(c=>c.id===choiceId))return {world,message:"這項事件已處理或選項不存在。"};
+ const current=world.playerStats??initialPlayerStats();
+ const cost=choiceId==="support"?12:choiceId==="organize"?8:0;
+ if(current.cash<cost)return {world,message:"資金不足，無法執行這項事件決策。"};
+ const playerStats={...current,cash:current.cash-cost,reputation:clamp(current.reputation+(choiceId==="support"?4:choiceId==="organize"?1:0)),trust:clamp(current.trust+(choiceId==="support"?3:choiceId==="organize"?5:-2)),publicPressure:clamp(current.publicPressure+(choiceId==="support"?-3:choiceId==="decline"?2:-1))};
+ const events=world.events.map(e=>e.id===eventId?{...e,resolved:true}:e);
+ const label=target.choices.find(c=>c.id===choiceId)?.label??choiceId;
+ const msg="事件決策「"+target.title+"」：選擇"+label+"。";
+ return {world:{...world,playerStats,events,history:record(world,msg)},message:msg};
 }
