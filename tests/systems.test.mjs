@@ -1,0 +1,56 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { advanceDay, claimDistrict, negotiate, recruitPerson, resolveDispute, developDistrict, initialPlayerStats } from "../src/game/turn.ts";
+import { createWorld } from "../src/game/world.ts";
+
+function startedWorld(){
+ const world=createWorld(20261122);
+ const district=world.districts.find(d=>d.status!=="controlled");
+ district.controllerId="player";district.status="controlled";district.influences.player=82;
+ world.player={organizationName:"測試組織",leaderName:"測試領導者",startDistrictId:district.id};
+ world.playerStats=initialPlayerStats();
+ world.factions.push({id:"player",name:"測試組織",archetype:"玩家組織",description:"測試",strength:60,founded:2026,isMajor:false,cohesion:70,treasury:120});
+ world.people.push({id:"player-leader",name:"測試領導者",age:29,factionId:"player",role:"組織領導者",leadership:80,management:75,diplomacy:70,loyalty:100,health:100,status:"active"});
+ world.relationships=world.factions.filter(f=>f.id!=="player").map(f=>({fromFactionId:"player",toFactionId:f.id,score:0,status:"neutral"}));
+ return world;
+}
+test("new worlds include generated leaders and diplomacy links",()=>{
+ const world=createWorld(77);
+ assert.equal(world.schemaVersion,2);
+ assert.equal(world.people.length,world.factions.length);
+ assert.ok(world.relationships.length>0);
+ assert.equal(world.events[0].day,1);
+});
+test("players can claim unclaimed land and pay its cost",()=>{
+ const world=startedWorld();const district=world.districts.find(d=>d.status==="unclaimed"&&d.controllerId===null);
+ const result=claimDistrict(world,district.id);
+ assert.equal(result.world.districts.find(d=>d.id===district.id).controllerId,"player");
+ assert.equal(result.world.playerStats.cash,98);
+});
+test("players can negotiate and improve faction relations",()=>{
+ const world=startedWorld();const faction=world.factions.find(f=>f.id!=="player");
+ const result=negotiate(world,faction.id);
+ const relation=result.world.relationships.find(r=>[r.fromFactionId,r.toFactionId].includes("player")&&[r.fromFactionId,r.toFactionId].includes(faction.id));
+ assert.equal(relation.score,12);
+ assert.equal(result.world.playerStats.cash,115);
+});
+test("players can recruit key staff and invest in controlled districts",()=>{
+ const world=startedWorld();const recruited=recruitPerson(world);
+ assert.equal(recruited.world.people.filter(p=>p.factionId==="player").length,2);
+ const district=recruited.world.districts.find(d=>d.controllerId==="player");
+ const developed=developDistrict(recruited.world,district.id);
+ assert.equal(developed.world.districts.find(d=>d.id===district.id).development,district.development+7);
+});
+test("weekly turns create a world event and update AI organizations",()=>{
+ const world=startedWorld();world.day=6;
+ const result=advanceDay(world);
+ assert.equal(result.world.day,7);
+ assert.ok(result.world.events.some(e=>e.day===7));
+ assert.ok(result.world.factions.every(f=>f.treasury>=0));
+});
+test("abstract territory disputes always charge the declared coordination cost",()=>{
+ const world=startedWorld();const target=world.districts.find(d=>d.controllerId&&d.controllerId!=="player");
+ const result=resolveDispute(world,target.id);
+ assert.equal(result.world.playerStats.cash,85);
+ assert.ok(result.message.includes("協調"));
+});
