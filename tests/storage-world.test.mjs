@@ -43,3 +43,15 @@ test("family leadership passes to a successor when a leader retires",()=>{
  assert.deepEqual(successor.parentIds,[leader.id]);
  assert.ok(result.world.events.some(e=>e.title==="家族世代交替"));
 });
+
+test("player organization name follows its new generational leader",()=>{
+ const world=createWorld(1234);
+ const leader={id:"player-old-leader",name:"舊任領導",age:77,factionId:"player",familyId:"family-player",generation:1,parentIds:[],role:"組織領導者",leadership:60,management:60,diplomacy:60,loyalty:100,health:100,status:"active"};
+ world.player={organizationName:"世代測試",leaderName:leader.name,startDistrictId:world.districts[0].id};
+ world.playerStats=initialPlayerStats();
+ world.factions.push({id:"player",name:"世代測試",archetype:"玩家",description:"測試",strength:30,founded:2026,isMajor:false,cohesion:70,treasury:120});
+ world.people.push(leader);world.day=364;
+ const result=advanceDay(world);
+ assert.notEqual(result.world.player.leaderName,leader.name);
+ assert.equal(result.world.player.leaderName,result.world.people.find(p=>p.factionId==="player"&&p.status==="active"&&p.role.includes("領導者")).name);
+});
