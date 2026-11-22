@@ -27,3 +27,19 @@ test("organic local organizations can emerge as a world advances",()=>{
  assert.ok(result.world.factions.length>=before);
  assert.ok(result.world.events.some(e=>e.day===30&&e.category==="organization"));
 });
+
+test("family leadership passes to a successor when a leader retires",()=>{
+ const world=createWorld(9191);
+ world.player={organizationName:"世代測試",leaderName:"測試領導",startDistrictId:world.districts[0].id};
+ world.playerStats=initialPlayerStats();
+ const leader=world.people[0];leader.age=77;leader.role="領導者";
+ world.day=364;
+ const result=advanceDay(world);
+ assert.equal(result.world.day,365);
+ assert.equal(result.world.people.find(p=>p.id===leader.id).status,"retired");
+ const successor=result.world.people.find(p=>p.factionId===leader.factionId&&p.status==="active"&&p.role.includes("領導者"));
+ assert.ok(successor);
+ assert.equal(successor.generation,leader.generation+1);
+ assert.deepEqual(successor.parentIds,[leader.id]);
+ assert.ok(result.world.events.some(e=>e.title==="家族世代交替"));
+});
