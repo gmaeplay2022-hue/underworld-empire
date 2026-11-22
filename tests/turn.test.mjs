@@ -18,7 +18,7 @@ test("daily turn advances one day and settles income and upkeep", () => {
   const world = playerWorld();
   const result = advanceDay(world);
   assert.equal(result.world.day, world.day + 1);
-  assert.equal(result.world.playerStats?.cash, 100 + 4 + Math.floor(world.districts.find(d => d.controllerId === "player").economy * 0.025) - 2);
+  assert.equal(result.world.playerStats?.cash, 120 + 5 + Math.floor(world.districts.find(d => d.controllerId === "player").economy * 0.025) - 2);
   assert.match(result.message, /收入/);
 });
 
@@ -32,9 +32,9 @@ test("daily turn cannot advance without a player organization", () => {
 test("policy actions charge their cost and apply bounded benefits", () => {
   const world = playerWorld();
   const result = applyPolicy(world, "community");
-  assert.equal(result.world.playerStats?.cash, 92);
+  assert.equal(result.world.playerStats?.cash, 112);
   assert.equal(result.world.playerStats?.reputation, 24);
-  assert.equal(result.world.playerStats?.trust, 52);
+  assert.equal(result.world.playerStats?.trust, 54);
 });
 
 test("policy actions reject unaffordable spending without changing state", () => {
