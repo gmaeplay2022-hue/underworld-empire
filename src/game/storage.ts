@@ -1,49 +1,36 @@
 import type { Faction, Person, Relationship, WorldEvent, WorldState } from "./world";
-const DB_NAME="jianghu-local";const DB_VERSION=2;const STORE="worlds";
-function openDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const request=indexedDB.open(DB_NAME,DB_VERSION);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:"slot"});};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
+const DB_NAME="jianghu-local";const DB_VERSION=3;const LEGACY_STORE="worlds";const STORE="worldSaves";
+function openDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const request=indexedDB.open(DB_NAME,DB_VERSION);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(LEGACY_STORE))db.createObjectStore(LEGACY_STORE,{keyPath:"slot"});if(!db.objectStoreNames.contains(STORE)){const store=db.createObjectStore(STORE,{keyPath:"id"});store.createIndex("worldId","worldId",{unique:false});store.createIndex("savedAt","savedAt",{unique:false});}};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
 export type SaveSlot={slot:number;label:string;world:WorldState;savedAt:string};
+export type SaveKind="auto"|"history"|"manual";
+export type WorldSave={id:string;worldId:string;kind:SaveKind;slot?:number;label:string;world:WorldState;savedAt:string};
 const clamp=(n:number)=>Math.max(0,Math.min(100,Number.isFinite(n)?n:50));
 export function migrateWorld(input:unknown):WorldState{
  if(!input||typeof input!=="object")throw new Error("存檔格式錯誤");
  const raw=input as Partial<WorldState>&{factions?:Array<Partial<Faction>&{id:string}>;people?:Person[];relationships?:Relationship[];events?:WorldEvent[]};
  if(!Array.isArray(raw.counties)||!Array.isArray(raw.districts)||!Array.isArray(raw.factions))throw new Error("存檔缺少必要世界資料");
+ if(!Number.isFinite(raw.seed)||!Number.isFinite(raw.day)||raw.day!<1||typeof raw.name!=="string")throw new Error("存檔基本資料不完整");
  const factions=raw.factions.map(f=>({...f,cohesion:clamp(f.cohesion??60),treasury:Math.max(0,f.treasury??100)} as Faction));
  const people=Array.isArray(raw.people)?raw.people.map(p=>({...p,familyId:p.familyId??"family-"+p.factionId,generation:p.generation??1,parentIds:p.parentIds??[]})):factions.map((f,i)=>({id:"migrated-"+f.id+"-leader",name:["陳文岳","周明哲","林志遠","許家豪","郭承恩","黃柏勳"][i%6],age:42,factionId:f.id,familyId:"family-"+f.id,generation:1,parentIds:[],role:"領導者",leadership:55,management:55,diplomacy:50,loyalty:75,health:90,status:"active" as const}));
  const relationships=Array.isArray(raw.relationships)?raw.relationships:[];
  const events=Array.isArray(raw.events)?raw.events:[{id:"migration-"+(raw.day??1),day:raw.day??1,category:"organization" as const,title:"存檔資料升級",description:"舊版世界已升級至目前資料格式。"}];
  return {...raw,schemaVersion:2,generatorVersion:raw.generatorVersion==="1.1.0"?"1.1.0":"1.0.0",day:Math.max(1,raw.day??1),factions,people,relationships,events,history:Array.isArray(raw.history)?raw.history:[],playerStats:raw.playerStats} as WorldState;
 }
-// Serialize writes per slot: a slow older autosave must never overwrite a newer state.
-const writeQueues=new Map<number,Promise<void>>();
-export function enqueueSlotWrite<K>(queues:Map<K,Promise<void>>,key:K,operation:()=>Promise<void>):Promise<void>{
- const previous=queues.get(key)??Promise.resolve();
- const current=previous.catch(()=>{}).then(operation);
- queues.set(key,current);
- return current.finally(()=>{if(queues.get(key)===current)queues.delete(key);});
-}
-export function saveWorld(slot:number,world:WorldState):Promise<void>{
- if(!Number.isInteger(slot)||slot<0||slot>10)return Promise.reject(new Error("存檔槽必須介於 0 到 10"));
- const snapshot=migrateWorld(structuredClone(world));
- return enqueueSlotWrite(writeQueues,slot,async()=>{
-  const db=await openDb();
-  try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({slot,label:snapshot.name,world:snapshot,savedAt:new Date().toISOString()} satisfies SaveSlot);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
-  finally{db.close();}
- });
-}
-export async function loadWorld(slot:number):Promise<WorldState|null>{
- let saved:SaveSlot|undefined;
- await enqueueSlotWrite(writeQueues,slot,async()=>{
-  const db=await openDb();
-  try{saved=await new Promise<SaveSlot|undefined>((resolve,reject)=>{const request=db.transaction(STORE).objectStore(STORE).get(slot);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
-  finally{db.close();}
- });
- return saved?.world?migrateWorld(saved.world):null;
-}
-export async function listSaves():Promise<Array<{slot:number;label:string;savedAt:string}>>{
- await Promise.all([...writeQueues.values()].map(p=>p.catch(()=>{})));
- const db=await openDb();
- try{const values=await new Promise<SaveSlot[]>((resolve,reject)=>{const request=db.transaction(STORE).objectStore(STORE).getAll();request.onsuccess=()=>resolve(request.result as SaveSlot[]);request.onerror=()=>reject(request.error);});return values.map(({slot,label,savedAt})=>({slot,label,savedAt})).sort((a,b)=>a.slot-b.slot);}
- finally{db.close();}
-}
-export function exportWorld(world:WorldState){return JSON.stringify(migrateWorld(world),null,2);}
-export async function importWorld(slot:number,json:string){const parsed=JSON.parse(json) as unknown;const world=migrateWorld(parsed);await saveWorld(slot,world);return world;}
+const writeQueues=new Map<string,Promise<void>>();
+export function enqueueSlotWrite<K>(queues:Map<K,Promise<void>>,key:K,operation:()=>Promise<void>):Promise<void>{const previous=queues.get(key)??Promise.resolve();const current=previous.catch(()=>{}).then(operation);queues.set(key,current);return current.finally(()=>{if(queues.get(key)===current)queues.delete(key);});}
+function worldIdentity(world:WorldState){return String(world.seed)+"-"+String(world.createdAt??"legacy").replace(/[^a-zA-Z0-9]/g,"");}
+async function putRecord(record:WorldSave){await enqueueSlotWrite(writeQueues,record.id,async()=>{const db=await openDb();try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put(record);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}});}
+async function getRecords(worldId?:string):Promise<WorldSave[]>{await Promise.all([...writeQueues.values()].map(p=>p.catch(()=>{})));const db=await openDb();try{return await new Promise<WorldSave[]>((resolve,reject)=>{const request=db.transaction(STORE).objectStore(STORE).getAll();request.onsuccess=()=>resolve((request.result as WorldSave[]).filter(r=>!worldId||r.worldId===worldId));request.onerror=()=>reject(request.error);});}finally{db.close();}}
+async function deleteRecords(ids:string[]){if(!ids.length)return;const db=await openDb();try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");for(const id of ids)tx.objectStore(STORE).delete(id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}finally{db.close();}}
+export async function saveAuto(world:WorldState):Promise<void>{const snapshot=migrateWorld(structuredClone(world));const worldId=worldIdentity(snapshot);const now=new Date().toISOString();const existing=await getRecords(worldId);const previousAuto=existing.find(r=>r.kind==="auto");const history:WorldSave={id:worldId+":history:"+now,worldId,kind:"history",label:"第 "+snapshot.day+" 天・自動檢查點",world:snapshot,savedAt:now};await putRecord({id:worldId+":auto",worldId,kind:"auto",label:snapshot.name,world:snapshot,savedAt:now});if(previousAuto&&previousAuto.world.day!==snapshot.day)await putRecord(history);else if(!previousAuto)await putRecord(history);const retained=(await getRecords(worldId)).filter(r=>r.kind==="history").sort((a,b)=>b.savedAt.localeCompare(a.savedAt));await deleteRecords(retained.slice(30).map(r=>r.id));}
+export async function saveManual(world:WorldState,slot:number):Promise<void>{if(!Number.isInteger(slot)||slot<1||slot>10)throw new Error("手動存檔槽必須介於 1 到 10");const snapshot=migrateWorld(structuredClone(world));const worldId=worldIdentity(snapshot);const now=new Date().toISOString();await putRecord({id:worldId+":manual:"+slot,worldId,kind:"manual",slot,label:snapshot.name+"・第 "+snapshot.day+" 天",world:snapshot,savedAt:now});}
+export async function listWorldSaves(world:WorldState):Promise<WorldSave[]>{const records=await getRecords(worldIdentity(world));return records.sort((a,b)=>{const order={auto:0,manual:1,history:2};return order[a.kind]-order[b.kind]||(b.savedAt.localeCompare(a.savedAt));});}
+export async function loadWorldSave(id:string):Promise<WorldState|null>{const all=await getRecords();const record=all.find(r=>r.id===id);return record?migrateWorld(record.world):null;}
+export async function restoreWorldSave(record:WorldSave):Promise<WorldState>{await saveAuto(record.world);return migrateWorld(structuredClone(record.world));}
+export function exportWorld(world:WorldState){return JSON.stringify({format:"jianghu-save",formatVersion:1,exportedAt:new Date().toISOString(),world:migrateWorld(world)},null,2);}
+export function parseWorldExport(json:string):WorldState{const parsed=JSON.parse(json) as unknown;if(!parsed||typeof parsed!=="object")throw new Error("存檔格式錯誤");const wrapped=parsed as {format?:string;formatVersion?:number;world?:unknown};return migrateWorld(wrapped.format==="jianghu-save"&&wrapped.formatVersion===1?wrapped.world:parsed);}
+export async function importWorld(json:string):Promise<WorldState>{const world=parseWorldExport(json);await saveAuto(world);return world;}
+// Legacy slot APIs remain for older clients and saved browser data.
+export async function saveWorld(slot:number,world:WorldState):Promise<void>{if(!Number.isInteger(slot)||slot<0||slot>10)throw new Error("存檔槽必須介於 0 到 10");if(slot===0)return saveAuto(world);return saveManual(world,slot);}
+export async function loadWorld(slot:number):Promise<WorldState|null>{const db=await openDb();try{const legacy=await new Promise<SaveSlot|undefined>((resolve,reject)=>{const request=db.transaction(LEGACY_STORE).objectStore(LEGACY_STORE).get(slot);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});if(legacy?.world)return migrateWorld(legacy.world);}finally{db.close();}return null;}
+export async function listSaves():Promise<Array<{slot:number;label:string;savedAt:string}>>{const db=await openDb();try{const values=await new Promise<SaveSlot[]>((resolve,reject)=>{const request=db.transaction(LEGACY_STORE).objectStore(LEGACY_STORE).getAll();request.onsuccess=()=>resolve(request.result as SaveSlot[]);request.onerror=()=>reject(request.error);});return values.map(({slot,label,savedAt})=>({slot,label,savedAt})).sort((a,b)=>a.slot-b.slot);}finally{db.close();}}
