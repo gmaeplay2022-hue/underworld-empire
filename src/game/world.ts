@@ -1,7 +1,8 @@
 export type County = { id: string; name: string; region: string; districts: number; x: number; y: number; economy: number; population: number };
 export type Faction = { id: string; name: string; archetype: string; description: string; strength: number; founded: number; isMajor: boolean };
 export type District = { id: string; countyId: string; name: string; population: number; economy: number; development: number; stability: number; governmentAttention: number; controllerId: string | null; influences: Record<string, number>; status: "controlled" | "neutral" | "unclaimed" };
-export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string }; schemaVersion: 1; generatorVersion: "0.2.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; history: string[]; createdAt: string };
+export type PlayerStats = { cash: number; reputation: number; trust: number; publicPressure: number; dailyIncome: number; dailyUpkeep: number };
+export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string }; playerStats?: PlayerStats; schemaVersion: 1; generatorVersion: "0.2.0"; seed: number; name: string; day: number; difficulty: "standard"; counties: County[]; factions: Faction[]; districts: District[]; history: string[]; createdAt: string };
 
 const countyRows: Array<[string,string,number,number,number]> = [
   ["taipei","台北市",6,9,2],["new-taipei","新北市",6,8,3],["keelung","基隆市",3,11,2],["taoyuan","桃園市",5,7,4],["hsinchu-city","新竹市",3,6,5],["hsinchu-county","新竹縣",5,8,5],
