@@ -55,7 +55,10 @@ export function createWorld(seed:number,difficulty:"standard"="standard"):WorldS
  const districts:District[]=[];let index=0;
  for(const county of counties){const used=new Set<string>();for(let j=0;j<county.districts;j++){let name=pick(r,districtWords);let attempts=0;while(used.has(name)&&attempts++<30)name=pick(r,districtWords);used.add(name);districts.push({id:"d-"+String(++index).padStart(3,"0"),countyId:county.id,name,population:Math.round(8+r()*52),economy:Math.round(15+r()*85),development:Math.round(20+r()*80),stability:Math.round(45+r()*50),governmentAttention:Math.round(5+r()*55),controllerId:null,influences:{},status:"unclaimed"});}}
  const order=shuffle(r,districts);const activeMajors=shuffle(r,factions.slice(0,8)).slice(0,6+Math.floor(r()*3));
- order.slice(0,40).forEach((d,i)=>{const f=activeMajors[i%activeMajors.length];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
+ const headquarterDistricts:District[]=[];for(const faction of activeMajors){const home=shuffle(r,districts.filter(d=>d.countyId===faction.headquartersCountyId&&!d.controllerId))[0];if(home)headquarterDistricts.push(home);}
+ headquarterDistricts.forEach((d,i)=>{const f=activeMajors[i];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=65+Math.floor(r()*26);});
+ const remainingMajorDistricts=order.filter(d=>!d.controllerId).slice(0,Math.max(0,40-headquarterDistricts.length));
+ remainingMajorDistricts.forEach((d,i)=>{const f=activeMajors[i%activeMajors.length];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
  order.slice(40,52).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
  order.slice(52,70).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
  for(const d of districts){if(d.controllerId){for(const f of shuffle(r,factions.filter(f=>f.id!==d.controllerId)).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);}}
