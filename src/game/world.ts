@@ -1,6 +1,6 @@
 export type County = { id: string; name: string; region: string; districts: number; x: number; y: number; economy: number; population: number };
 export type Faction = { id: string; name: string; archetype: string; description: string; strength: number; founded: number; isMajor: boolean; cohesion: number; treasury: number; headquartersCountyId?: string; influenceCountyIds?: string[]; goals?: string[]; internalTension?: number; worldRole?: string };
-export type Person = { id: string; name: string; age: number; factionId: string; familyId: string; generation: number; parentIds: string[]; role: string; combat: number; intelligence: number; leadership: number; charisma: number; management: number; loyalty: number; diplomacy?: number; health: number; status: "active" | "retired"; personality?: string; values?: string; ambition?: string; skills?: string[]; trust?: number; affinity?: number; respect?: number; fear?: number; background?: string; };
+export type Person = { id: string; name: string; age: number; factionId: string; familyId: string; generation: number; parentIds: string[]; role: string; combat: number; intelligence: number; leadership: number; charisma: number; management: number; prestige?: number; loyalty: number; diplomacy?: number; health: number; status: "active" | "retired"; personality?: string; values?: string; ambition?: string; skills?: string[]; trust?: number; affinity?: number; respect?: number; fear?: number; background?: string; };
 export type Relationship = { fromFactionId: string; toFactionId: string; score: number; status: "allied" | "friendly" | "neutral" | "rival" | "hostile" };
 export type WorldEvent = { id: string; day: number; category: "community" | "organization" | "diplomacy" | "economy" | "territory"; title: string; description: string; choices?: Array<{id:string;label:string}>; resolved?: boolean };
 export type District = { id: string; countyId: string; name: string; population: number; economy: number; development: number; stability: number; governmentAttention: number; controllerId: string | null; influences: Record<string, number>; status: "controlled" | "neutral" | "unclaimed"; reformStage?: "unmanaged" | "reforming" | "developing" | "established"; reformProgress?: number; localSupport?: number; recruitPool?: number; managerPersonId?: string | null; deputyPersonIds?: string[]; }
@@ -8,10 +8,10 @@ export type PlayerStats = { cash: number; reputation: number; trust: number; pub
 export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string; birthplace?: string }; playerStats?: PlayerStats; schemaVersion: 2; generatorVersion: "1.0.0" | "1.1.0" | "1.2.0"; seed: number; name: string; day: number; difficulty: "standard"; worldTendency?: string; counties: County[]; factions: Faction[]; districts: District[]; people: Person[]; relationships: Relationship[]; events: WorldEvent[]; history: string[]; createdAt: string };
 
 const countyRows: Array<[string,string,number,number,number]> = [
-  ["taipei","台北市",6,9,2],["new-taipei","新北市",6,8,3],["keelung","基隆市",3,11,2],["taoyuan","桃園市",5,7,4],["hsinchu-city","新竹市",3,6,5],["hsinchu-county","新竹縣",5,8,5],
-  ["miaoli","苗栗縣",4,7,6],["taichung","台中市",6,8,7],["changhua","彰化縣",5,7,8],["nantou","南投縣",4,9,8],["yunlin","雲林縣",4,7,9],
-  ["chiayi-city","嘉義市",3,8,10],["chiayi-county","嘉義縣",4,9,10],["tainan","台南市",5,8,11],["kaohsiung","高雄市",6,9,12],["pingtung","屏東縣",5,10,13],
-  ["yilan","宜蘭縣",5,12,4],["hualien","花蓮縣",4,12,7],["taitung","台東縣",4,12,10],["penghu","澎湖縣",3,3,10],["kinmen","金門縣",3,2,13],["lienchiang","連江縣",3,4,1]
+  ["taipei","台北市",3,9,2],["new-taipei","新北市",3,8,3],["keelung","基隆市",3,11,2],["taoyuan","桃園市",3,7,4],["hsinchu-city","新竹市",3,6,5],["hsinchu-county","新竹縣",3,8,5],
+  ["miaoli","苗栗縣",3,7,6],["taichung","台中市",3,8,7],["changhua","彰化縣",3,7,8],["nantou","南投縣",3,9,8],["yunlin","雲林縣",3,7,9],
+  ["chiayi-city","嘉義市",3,8,10],["chiayi-county","嘉義縣",3,9,10],["tainan","台南市",3,8,11],["kaohsiung","高雄市",3,9,12],["pingtung","屏東縣",3,10,13],
+  ["yilan","宜蘭縣",3,12,4],["hualien","花蓮縣",3,12,7],["taitung","台東縣",3,12,10],["penghu","澎湖縣",3,3,10],["kinmen","金門縣",3,2,13],["lienchiang","連江縣",3,4,1]
 ];
 export const COUNTY_DEFINITIONS: County[] = countyRows.map(([id,name,districts,x,y],i)=>({id,name,region:i<6?"北部":i<11?"中部":i<16?"南部":i<19?"東部":"離島",districts,x,y,economy:0,population:0}));
 export const INITIAL_DISTRICT_COUNT = COUNTY_DEFINITIONS.reduce((n,c)=>n+c.districts,0);
@@ -42,7 +42,7 @@ function shuffle<T>(r:()=>number,items:T[]):T[]{const a=[...items];for(let i=a.l
 function personName(r:()=>number){return pick(r,surnames)+pick(r,givenNames);}
 function makePerson(r:()=>number,id:string,factionId:string,role:string,age:number,familyId:string,generation=1,parentIds:string[]=[]):Person{
  const personality=pick(r,personalities);
- return {id,name:personName(r),age,factionId,familyId,generation,parentIds,role,combat:25+Math.floor(r()*71),intelligence:35+Math.floor(r()*61),leadership:35+Math.floor(r()*61),charisma:30+Math.floor(r()*66),management:35+Math.floor(r()*61),loyalty:45+Math.floor(r()*51),health:75+Math.floor(r()*26),status:"active",personality,values:pick(r,values),ambition:pick(r,ambitions),skills:shuffle(r,skills).slice(0,2+Math.floor(r()*2)),trust:35+Math.floor(r()*61),affinity:25+Math.floor(r()*71),respect:25+Math.floor(r()*71),fear:Math.floor(r()*41),background:"出身與經歷依本世界種子生成的虛構人物。"};
+ return {id,name:personName(r),age,factionId,familyId,generation,parentIds,role,combat:25+Math.floor(r()*71),intelligence:35+Math.floor(r()*61),leadership:35+Math.floor(r()*61),charisma:30+Math.floor(r()*66),management:35+Math.floor(r()*61),prestige:30+Math.floor(r()*66),loyalty:45+Math.floor(r()*51),health:75+Math.floor(r()*26),status:"active",personality,values:pick(r,values),ambition:pick(r,ambitions),skills:shuffle(r,skills).slice(0,2+Math.floor(r()*2)),trust:35+Math.floor(r()*61),affinity:25+Math.floor(r()*71),respect:25+Math.floor(r()*71),fear:Math.floor(r()*41),background:"出身與經歷依本世界種子生成的虛構人物。"};
 }
 export function createWorld(seed:number,difficulty:"standard"="standard"):WorldState{
  const r=rng(seed); const counties=COUNTY_DEFINITIONS.map(c=>({...c,population:Math.round((35+r()*165)*1000),economy:Math.round(25+r()*75)}));
