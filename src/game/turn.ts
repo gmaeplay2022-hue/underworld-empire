@@ -1,4 +1,4 @@
-import type { Person, Relationship, WorldEvent, WorldState } from "./world";
+import type { Person, Relationship, Squad, WorldEvent, WorldState } from "./world";
 import { settleTerritoryCompetition } from "./competition.ts";
 export type PolicyAction = "community" | "governance" | "development";
 export type TurnResult = { world: WorldState; message: string };
@@ -201,4 +201,18 @@ export function resolveWorldEvent(world:WorldState,eventId:string,choiceId:strin
  const label=target.choices.find(c=>c.id===choiceId)?.label??choiceId;
  const msg="事件決策「"+target.title+"」：選擇"+label+"。";
  return {world:{...world,playerStats,events,history:record(world,msg)},message:msg};
+}
+
+
+export function createSquad(world:WorldState,name:string):TurnResult{
+ if(!world.player)return {world,message:"請先建立玩家組織。"};
+ const roster=world.people.filter(p=>p.factionId==="player"&&p.status==="active"&&p.role!=="組織領導者");
+ const assigned=new Set((world.squads??[]).flatMap(s=>s.memberPersonIds));
+ const available=roster.filter(p=>!assigned.has(p.id));
+ if(available.length<2)return {world,message:"至少需要兩名尚未編組的在任成員。"};
+ const members=available.slice(0,Math.min(5,available.length));
+ const leader=[...members].sort((a,b)=>(b.leadership+b.prestige??b.charisma)-(a.leadership+a.prestige??a.charisma))[0];
+ const squad:Squad={id:"squad-"+world.day+"-"+((world.squads??[]).length+1),name:name.trim()||"地方行動小隊 "+((world.squads??[]).length+1),leaderPersonId:leader.id,memberPersonIds:members.map(p=>p.id),morale:Math.round(members.reduce((n,p)=>n+p.loyalty,0)/members.length),locationDistrictId:world.player.startDistrictId,purpose:"district"};
+ const msg="已編成「"+squad.name+"」，由 "+leader.name+" 擔任隊長，共 "+members.length+" 人。隊伍可用於抽象地盤管理、地方發展與協調任務。";
+ return {world:{...world,squads:[...(world.squads??[]),squad],history:[msg,...world.history].slice(0,150)},message:msg};
 }
