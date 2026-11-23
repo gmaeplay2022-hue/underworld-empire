@@ -17,7 +17,12 @@ function startedWorld(){
 test("new worlds include generated leaders and diplomacy links",()=>{
  const world=createWorld(77);
  assert.equal(world.schemaVersion,2);
- assert.equal(world.people.length,world.factions.length);
+ assert.ok(world.people.length>world.factions.length);
+ for(const faction of world.factions){
+  const roster=world.people.filter(person=>person.factionId===faction.id);
+  assert.ok(roster.length>=6, faction.name+" should have a complete character roster");
+  assert.ok(roster.some(person=>person.role==="領導者"), faction.name+" should have a generated leader");
+ }
  assert.ok(world.relationships.length>0);
  assert.equal(world.events[0].day,1);
 });
