@@ -63,7 +63,7 @@ export function claimDistrict(world:WorldState,districtId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const district=world.districts.find(d=>d.id===districtId);if(!district)return {world,message:"找不到指定地盤。"};if(district.controllerId)return {world,message:"此地盤已有主要控制者，請透過外交或競爭改變局勢。"};
  const current=world.playerStats??initialPlayerStats();const cost=district.status==="neutral"?32:22;if(current.cash<cost)return {world,message:"資金不足，需要 "+cost+" 點組織資源。"};
  const playerStats={...current,cash:current.cash-cost,reputation:clamp(current.reputation+2),publicPressure:clamp(current.publicPressure+(district.status==="neutral"?2:1))};
- const districts=world.districts.map(d=>d.id===districtId?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:78},stability:clamp(d.stability-2)}:d);const msg="玩家組織取得「"+district.name+"」的主要管理權。";
+ const districts=world.districts.map(d=>d.id===districtId?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:78},stability:clamp(d.stability-2),reformStage:"reforming" as const,reformProgress:0,localSupport:clamp(Math.round(d.stability*.45)),recruitPool:Math.max(3,Math.min(12,Math.floor(d.population/8)))}:d);const msg="玩家組織取得「"+district.name+"」的主要管理權。";
  return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
 }
 export function negotiate(world:WorldState,factionId:string):TurnResult{
@@ -95,6 +95,38 @@ export function developDistrict(world:WorldState,districtId:string):TurnResult{
  const current=world.playerStats??initialPlayerStats();if(current.cash<18)return {world,message:"資金不足，需要 18 點建設資源。"};
  const playerStats={...current,cash:current.cash-18,reputation:clamp(current.reputation+1)};const districts=world.districts.map(d=>d.id===districtId?{...d,development:clamp(d.development+7),stability:clamp(d.stability+4),economy:clamp(d.economy+3)}:d);
  const msg="完成「"+district.name+"」的地方建設，發展與穩定度提升。";return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
+}
+
+export function reformDistrict(world:WorldState,districtId:string):TurnResult{
+ if(!world.player)return {world,message:"請先建立玩家組織。"};
+ const district=world.districts.find(d=>d.id===districtId);
+ if(!district||district.controllerId!=="player")return {world,message:"只能整頓自己控制的地盤。"};
+ const current=world.playerStats??initialPlayerStats();const cost=16;
+ if(current.cash<cost)return {world,message:"資金不足，地盤整頓需要 "+cost+" 點資金。"};
+ const progress=(district.reformProgress??0)+1;
+ const stage=progress>=4?"established" as const:progress>=2?"developing" as const:"reforming" as const;
+ const districts=world.districts.map(d=>d.id===districtId?{...d,reformStage:stage,reformProgress:progress,stability:clamp(d.stability+5),development:clamp(d.development+3),localSupport:clamp((d.localSupport??35)+7),governmentAttention:clamp(d.governmentAttention+(progress===1?1:0))}:d);
+ const playerStats={...current,cash:current.cash-cost,reputation:clamp(current.reputation+1),trust:clamp(current.trust+2),publicPressure:clamp(current.publicPressure-1)};
+ const label=stage==="established"?"穩定經營":stage==="developing"?"發展建設":"基礎整頓";
+ const msg="「"+district.name+"」完成一項整頓工作，進度 "+progress+"/4，進入「"+label+"」階段。";
+ return {world:{...world,playerStats,districts,history:record(world,msg)},message:msg};
+}
+export function recruitLocalMembers(world:WorldState,districtId:string):TurnResult{
+ if(!world.player)return {world,message:"請先建立玩家組織。"};
+ const district=world.districts.find(d=>d.id===districtId);
+ if(!district||district.controllerId!=="player")return {world,message:"只能在自己控制的地盤招募地方成員。"};
+ if((district.reformProgress??0)<1)return {world,message:"請先完成至少一項地盤整頓，建立基本地方信任。"};
+ const pool=district.recruitPool??Math.max(2,Math.floor(district.population/10));
+ if(pool<=0)return {world,message:"此地盤目前沒有可招募的地方人選，請先持續經營。"};
+ const current=world.playerStats??initialPlayerStats();if(current.cash<12)return {world,message:"資金不足，地方招募需要 12 點資金。"};
+ const roster=world.people.filter(p=>p.factionId==="player"&&p.status==="active");
+ if(roster.length>=30)return {world,message:"組織人員已達 30 人管理上限。"};
+ const count=Math.min(pool,30-roster.length,1+((world.seed+world.day+district.id.length)%2));
+ const people:Person[]=Array.from({length:count},(_,i)=>{const n=roster.length+i+1;return {id:"local-"+district.id+"-"+(district.recruitPool??pool)+"-"+world.day+"-"+i,name:["林冠宇","陳柏安","張予晴","黃子維","吳承翰","李佳蓉","周品睿","許雅雯"][(world.seed+world.day+n)%8],age:20+((world.seed+world.day+n*3)%25),factionId:"player",familyId:"local-family-"+district.id+"-"+n,generation:1,parentIds:[],role:"地方成員",combat:25+((world.seed+n*7)%46),intelligence:35+((world.seed+n*11)%51),leadership:20+((world.seed+n*5)%45),charisma:35+((world.seed+n*13)%56),management:25+((world.seed+n*17)%51),loyalty:55+((world.seed+n*3)%36),health:100,status:"active" as const};});
+ const districts=world.districts.map(d=>d.id===districtId?{...d,recruitPool:pool-count,localSupport:clamp((d.localSupport??40)+count*3)}:d);
+ const playerStats={...current,cash:current.cash-12,trust:clamp(current.trust+count*2),dailyUpkeep:current.dailyUpkeep+count};
+ const msg="從「"+district.name+"」吸收 "+count+" 位地方成員加入組織，已納入人員名冊。";
+ return {world:{...world,people:[...world.people,...people],districts,playerStats,history:record(world,msg)},message:msg};
 }
 export function resolveWorldEvent(world:WorldState,eventId:string,choiceId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};
