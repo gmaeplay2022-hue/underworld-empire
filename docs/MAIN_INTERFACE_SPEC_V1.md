@@ -56,3 +56,8 @@
 - [ ] 劇情章節、選擇、數值與事件能納入 WorldState 並隨存檔保存。
 - [ ] 所有分頁中的既有操作均可正常執行。
 - [ ] 完成 TypeScript build、單元測試與瀏覽器端到端測試。
+
+
+## 8. 整合故障修復紀錄
+
+先前主介面改版的 JSX 引用了未宣告的 `overviewTop`，會造成 TypeScript 編譯失敗，因而無法產生可部署的新版網站。已補上世界總覽卡片定義。另新增 GitHub Actions 工作流程：推送 main 後安裝依賴、執行單元測試、執行 TypeScript／Vite 建置，通過後部署至 GitHub Pages。部署是否成功仍以 Actions 實際執行結果為準。
