@@ -12,9 +12,9 @@ function record(world:WorldState,message:string){return [message,...world.histor
 export function advanceDay(world:WorldState):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織，再開始每日回合。"};
  const current=world.playerStats??initialPlayerStats();let player=world.player?{...world.player}:undefined;const controlled=world.districts.filter(d=>d.controllerId==="player");
- const income=current.dailyIncome+controlled.reduce((sum,d)=>sum+Math.floor(d.economy*.025),0);const upkeep=current.dailyUpkeep+Math.max(0,Math.floor((controlled.length-1)/4));const cash=Math.max(0,current.cash+income-upkeep);const day=world.day+1;
+ const income=current.dailyIncome+controlled.reduce((sum,d)=>{const manager=world.people.find(p=>p.id===d.managerPersonId&&p.status==="active");const deputies=(d.deputyPersonIds??[]).map(id=>world.people.find(p=>p.id===id&&p.status==="active")).filter((p):p is Person=>!!p);const managementBonus=manager?Math.floor(manager.management/25):0;const deputyBonus=deputies.reduce((n,p)=>n+Math.floor(p.management/50),0);return sum+Math.floor(d.economy*.025)+managementBonus+deputyBonus;},0);const upkeep=current.dailyUpkeep+Math.max(0,Math.floor((controlled.length-1)/4));const cash=Math.max(0,current.cash+income-upkeep);const day=world.day+1;
  const playerStats={...current,cash,reputation:clamp(current.reputation+(controlled.length?1:0)),trust:clamp(current.trust+(current.cash>=upkeep?1:-2)),publicPressure:clamp(current.publicPressure+(controlled.some(d=>d.stability<42)?2:-1))};
- const districts=world.districts.map(d=>{const playerControlled=d.controllerId==="player";const attention=playerControlled?clamp(d.governmentAttention+(playerStats.publicPressure>=55?2:playerStats.publicPressure<=25?-1:0)):d.governmentAttention;return {...d,governmentAttention:attention,stability:playerControlled&&attention>=80?clamp(d.stability-1):d.stability,influences:{...d.influences}};});const factions=world.factions.map(f=>({...f}));let relationships=[...world.relationships];let people=world.people.map(p=>{const age=p.age+(day%365===0?1:0);const health=clamp(p.health-(day%180===0?1:0));const retired=p.status==="active"&&(age>=78||health<=0);return {...p,age,health,status:retired?"retired" as const:p.status};});const generatedEvents:WorldEvent[]=[];
+ const districts=world.districts.map(d=>{const playerControlled=d.controllerId==="player";const attention=playerControlled?clamp(d.governmentAttention+(playerStats.publicPressure>=55?2:playerStats.publicPressure<=25?-1:0)):d.governmentAttention;const manager=world.people.find(p=>p.id===d.managerPersonId&&p.status==="active");const deputyCount=(d.deputyPersonIds??[]).filter(id=>world.people.some(p=>p.id===id&&p.status==="active")).length;const stabilityBonus=playerControlled?(manager?Math.floor(manager.leadership/35):0)+deputyCount:0;return {...d,governmentAttention:attention,stability:clamp(d.stability+(stabilityBonus>0?1:0)-(playerControlled&&attention>=80?1:0)),influences:{...d.influences}};});const factions=world.factions.map(f=>({...f}));let relationships=[...world.relationships];let people=world.people.map(p=>{const age=p.age+(day%365===0?1:0);const health=clamp(p.health-(day%180===0?1:0));const retired=p.status==="active"&&(age>=78||health<=0);return {...p,age,health,status:retired?"retired" as const:p.status};});const generatedEvents:WorldEvent[]=[];
  const retiredLeaders=people.filter((p,i)=>p.role.includes("領導者")&&p.status==="retired"&&world.people[i].status==="active");
  for(const retired of retiredLeaders){let successor=people.find(p=>p.factionId===retired.factionId&&p.familyId===retired.familyId&&p.status==="active");if(successor){people=people.map(p=>p.id===successor?.id?{...p,age:Math.max(18,Math.min(p.age,retired.age-18)),generation:retired.generation+1,parentIds:[retired.id],role:"新任領導者",status:"active" as const}:p);}else{const id="person-successor-"+retired.id+"-"+day;successor={id,name:["林承岳","陳以晴","周家睿","許安然","沈柏廷"][((world.seed+day+retired.id.length)%5)],age:18,generation:retired.generation+1,factionId:retired.factionId,familyId:retired.familyId,parentIds:[retired.id],role:"新任領導者",combat:38,intelligence:54,leadership:45,charisma:50,management:48,loyalty:85,health:100,status:"active"};people.push(successor);}if(retired.factionId==="player"&&player)player.leaderName=successor.name;generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","家族世代交替",retired.name+"卸下領導職務，"+(successor?.name??"新任接班人")+"接續組織責任。"));}
  if(day%365===0){
@@ -89,6 +89,25 @@ export function resolveDispute(world:WorldState,districtId:string):TurnResult{
  const relationships=setRelation(world,"player",opponent.id,relationScore(world,"player",opponent.id)+(won?-5:-15));const districts=world.districts.map(d=>d.id!==districtId?d:won?{...d,controllerId:"player",status:"controlled" as const,influences:{...d.influences,player:82,[opponent.id]:Math.min(35,d.influences[opponent.id]??20)}}:{...d,stability:clamp(d.stability-5),influences:{...d.influences,player:clamp((d.influences.player??0)+8)}});
  const msg=won?"協調結果有利：玩家組織取得「"+district.name+"」的主要管理權。":"協調未能取得共識：「"+district.name+"」的局勢更加緊張。";
  return {world:{...world,playerStats,districts,relationships,history:record(world,msg)},message:msg};
+}
+export function assignDistrictStaff(world:WorldState,districtId:string,personId:string|null,role:"manager"|"deputy"="manager"):TurnResult{
+ if(!world.player)return {world,message:"請先建立玩家組織。"};
+ const district=world.districts.find(d=>d.id===districtId);
+ if(!district||district.controllerId!=="player")return {world,message:"只能安排自己控制地盤的人員。"};
+ if(personId!==null){
+  const person=world.people.find(p=>p.id===personId&&p.factionId==="player"&&p.status==="active");
+  if(!person)return {world,message:"只能任命在任的組織成員。"};
+  const occupied=world.districts.find(d=>d.id!==districtId&&(d.managerPersonId===personId||(d.deputyPersonIds??[]).includes(personId)));
+  if(occupied)return {world,message:"此成員已派駐其他地盤，請先調整原職務。"};
+  if(role==="deputy"&&district.managerPersonId===personId)return {world,message:"地盤負責人不能同時擔任輔助幹部。"};
+  if(role==="deputy"&&(district.deputyPersonIds??[]).includes(personId))return {world,message:"此成員已是本地盤輔助幹部。"};
+  if(role==="manager"&&(district.deputyPersonIds??[]).includes(personId))return {world,message:"此成員目前是本地盤輔助幹部，請先解除輔助職務。"};
+ }
+ if(role==="deputy"&&personId&&(district.deputyPersonIds??[]).filter(id=>id!==personId).length>=2)return {world,message:"每個地盤最多安排兩名輔助幹部。"};
+ const districts=world.districts.map(d=>{if(d.id!==districtId)return d;if(role==="manager")return {...d,managerPersonId:personId};const deputies=(d.deputyPersonIds??[]).filter(id=>id!==personId);return {...d,deputyPersonIds:personId?[...deputies,personId]:deputies};});
+ const name=personId?world.people.find(p=>p.id===personId)?.name??"成員":"職務空缺";
+ const msg=(role==="manager"?"地盤負責人":"輔助幹部")+"已更新："+name+"。";
+ return {world:{...world,districts,history:record(world,msg)},message:msg};
 }
 export function developDistrict(world:WorldState,districtId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const district=world.districts.find(d=>d.id===districtId);if(!district||district.controllerId!=="player")return {world,message:"只能投資自己管理的地盤。"};
