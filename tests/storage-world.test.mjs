@@ -16,7 +16,7 @@ test("legacy world saves migrate to the current schema without losing the map",(
  assert.equal(migrated.people.length,migrated.factions.length);
  assert.ok(Array.isArray(migrated.events));
 });
-test("organic local organizations can emerge as a world advances",()=>{
+test("legacy character attributes migrate into the finalized six-value model",()=>{\n const world=createWorld(7070);\n const person=world.people[0];\n delete person.combat;delete person.intelligence;delete person.charisma;\n person.diplomacy=73;\n const migrated=migrateWorld(world);\n const restored=migrated.people.find(item=>item.id===person.id);\n assert.equal(restored.charisma,73);\n assert.equal(typeof restored.combat,"number");\n assert.equal(typeof restored.intelligence,"number");\n assert.equal(migrated.generatorVersion,"1.2.0");\n});\n\ntest("organic local organizations can emerge as a world advances",()=>{
  const world=createWorld(8181);
  world.player={organizationName:"測試組織",leaderName:"測試領導",startDistrictId:world.districts[0].id};
  world.playerStats=initialPlayerStats();
@@ -46,7 +46,7 @@ test("family leadership passes to a successor when a leader retires",()=>{
 
 test("player organization name follows its new generational leader",()=>{
  const world=createWorld(1234);
- const leader={id:"player-old-leader",name:"舊任領導",age:77,factionId:"player",familyId:"family-player",generation:1,parentIds:[],role:"組織領導者",leadership:60,management:60,diplomacy:60,loyalty:100,health:100,status:"active"};
+ const leader={id:"player-old-leader",name:"舊任領導",age:77,factionId:"player",familyId:"family-player",generation:1,parentIds:[],role:"組織領導者",combat:55,intelligence:60,leadership:60,charisma:60,management:60,loyalty:100,health:100,status:"active"};
  world.player={organizationName:"世代測試",leaderName:leader.name,startDistrictId:world.districts[0].id};
  world.playerStats=initialPlayerStats();
  world.factions.push({id:"player",name:"世代測試",archetype:"玩家",description:"測試",strength:30,founded:2026,isMajor:false,cohesion:70,treasury:120});
