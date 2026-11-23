@@ -103,7 +103,7 @@ test("local members can be recruited only after district reform",()=>{
 });
 
 test("district staff assignments are exclusive and limited to one manager plus two deputies",()=>{
- const world=startedWorld();const districts=world.districts.filter(d=>d.controllerId==="player");const first=districts[0];const second=districts[1];
+ const world=startedWorld();const first=world.districts.find(d=>d.controllerId==="player");const second=world.districts.find(d=>d.id!==first.id&&d.controllerId===null);second.controllerId="player";second.status="controlled";second.influences.player=70;
  world.people.push({id:"cadre-a",name:"幹部甲",age:35,factionId:"player",role:"核心幹部",combat:50,intelligence:60,leadership:80,charisma:55,management:90,loyalty:90,health:100,status:"active"});
  world.people.push({id:"cadre-b",name:"幹部乙",age:34,factionId:"player",role:"核心幹部",combat:50,intelligence:60,leadership:60,charisma:55,management:70,loyalty:80,health:100,status:"active"});
  world.people.push({id:"cadre-c",name:"幹部丙",age:33,factionId:"player",role:"核心幹部",combat:50,intelligence:60,leadership:60,charisma:55,management:65,loyalty:80,health:100,status:"active"});
