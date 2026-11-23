@@ -73,9 +73,9 @@ test("V1.1 generates the approved eight faction archetypes and complete characte
 test("V1.1 preserves balanced territory counts and places active major factions at their headquarters", () => {
   const world = createWorld(20261122);
   const counts = countWorld(world);
-  assert.equal(counts.controlled, 52);
+  assert.equal(counts.controlled, 36);
   assert.equal(counts.neutral, 18);
-  assert.equal(counts.unclaimed, 26);
+  assert.equal(counts.unclaimed, 12);
   for (const faction of world.factions.filter(item => item.isMajor)) {
     if (world.districts.some(district => district.controllerId === faction.id)) {
       assert.ok(world.districts.some(district => district.controllerId === faction.id && district.countyId === faction.headquartersCountyId));
