@@ -103,7 +103,7 @@ export function reformDistrict(world:WorldState,districtId:string):TurnResult{
  if(!district||district.controllerId!=="player")return {world,message:"只能整頓自己控制的地盤。"};
  const current=world.playerStats??initialPlayerStats();const cost=16;
  if(current.cash<cost)return {world,message:"資金不足，地盤整頓需要 "+cost+" 點資金。"};
- const progress=(district.reformProgress??0)+1;
+ const progress=Math.min(4,(district.reformProgress??0)+1);
  const stage=progress>=4?"established" as const:progress>=2?"developing" as const:"reforming" as const;
  const districts=world.districts.map(d=>d.id===districtId?{...d,reformStage:stage,reformProgress:progress,stability:clamp(d.stability+5),development:clamp(d.development+3),localSupport:clamp((d.localSupport??35)+7),governmentAttention:clamp(d.governmentAttention+(progress===1?1:0))}:d);
  const playerStats={...current,cash:current.cash-cost,reputation:clamp(current.reputation+1),trust:clamp(current.trust+2),publicPressure:clamp(current.publicPressure-1)};
@@ -116,7 +116,7 @@ export function recruitLocalMembers(world:WorldState,districtId:string):TurnResu
  const district=world.districts.find(d=>d.id===districtId);
  if(!district||district.controllerId!=="player")return {world,message:"只能在自己控制的地盤招募地方成員。"};
  if((district.reformProgress??0)<1)return {world,message:"請先完成至少一項地盤整頓，建立基本地方信任。"};
- const pool=district.recruitPool??Math.max(2,Math.floor(district.population/10));
+ const pool=district.recruitPool??Math.max(3,Math.min(12,Math.floor(district.population/8)));
  if(pool<=0)return {world,message:"此地盤目前沒有可招募的地方人選，請先持續經營。"};
  const current=world.playerStats??initialPlayerStats();if(current.cash<12)return {world,message:"資金不足，地方招募需要 12 點資金。"};
  const roster=world.people.filter(p=>p.factionId==="player"&&p.status==="active");
