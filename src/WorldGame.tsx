@@ -27,9 +27,45 @@ export default function WorldGame({onStory}:{onStory:(name:string)=>void}){
 
  const overviewTop=<section className="overview-grid"><article className="overview-card"><div className="section-head"><span>世界局勢</span><small>台灣 22 縣市 · 96 個地盤</small></div><div className="overview-kpis"><div><b>{stats?.controlled??0}</b><span>已有控制者</span></div><div><b>{stats?.neutral??0}</b><span>中立地盤</span></div><div><b>{stats?.unclaimed??0}</b><span>無主地盤</span></div><div><b>{stats?.factions??0}</b><span>勢力總數</span></div></div><button onClick={()=>setActiveTab("map")}>查看世界地圖 →</button></article><article className="overview-card"><div className="section-head"><span>組織經營</span><small>{world?.player?"經營中":"尚未建立"}</small></div><p>{world?.player?world.player.organizationName+" · 領導人 "+world.player.leaderName:"選擇可用地盤，建立你的組織並開始經營。"}</p><button onClick={()=>setActiveTab(world?.player?"finance":"map")}>{world?.player?"進入財務經營":"選擇起始地盤"} →</button></article><article className="overview-card"><div className="section-head"><span>待處理事件</span><small>{world?.events.filter(e=>e.choices&&!e.resolved).length??0} 項待決策</small></div>{world?.events.filter(e=>e.choices&&!e.resolved).slice(0,3).map(e=><p key={e.id}>・{e.title}</p>)}<button onClick={()=>setActiveTab("events")}>查看事件紀錄 →</button></article></section>;
 
- return <main className="world-shell">
-  <header className="world-top"><a className="brand" href="#"><span className="brand-mark">江</span><span>JIANGHU<small>江湖・世界指揮中心</small></span></a><div className="world-actions"><button onClick={()=>{const name=world?.player?.leaderName??leaderName.trim();name?onStory(name):setMessage("請先在新遊戲建立畫面輸入主角姓名，再開始故事模式。");}}>故事篇章</button><span className="mode-pill">WORLD MANAGEMENT</span></div></header>
-  {!world?<section className="world-start"><div className="kicker">WORLD GENERATION SYSTEM</div><h1>建立你的江湖世界</h1><p>固定的虛擬台灣，動態生成的勢力、人脈與地方局勢。每個世界都有獨立種子，可以長期保存。</p><div className="seed-control"><label htmlFor="seed">世界種子（可留空自動產生）</label><input id="seed" value={seedInput} onChange={e=>setSeedInput(e.target.value.replace(/[^0-9]/g,"").slice(0,10))} placeholder="例如 20261122" inputMode="numeric"/></div><button className="primary world-create" onClick={newGame}>生成新世界 →</button><div className="world-start-notes"><span>22 縣市</span><span>96 個地盤</span><span>8 個主要 AI 勢力</span><span>平衡勢力密度</span></div><div className="save-list"><h3>本機世界存檔</h3><p>每個世界獨立保存。載入世界不會覆蓋其他世界；舊版存檔會在讀取清單時逐步相容轉入。</p>{worldLibrary.map(record=><div className="save-row" key={record.id}><span>{record.world.name}</span><small>第 {record.world.day} 天 · 種子 {record.world.seed} · {new Date(record.savedAt).toLocaleString()}</small><div className="save-buttons"><button onClick={()=>loadRecord(record)}>載入</button><button onClick={()=>downloadSave(record.world)}>下載</button></div></div>)}{worldLibrary.length===0&&<small>目前尚無已保存的世界。</small>}</div></section>
+ return <main className="world-shell home-shell">
+  <header className="world-top home-top">
+   <a className="brand" href="#"><span className="brand-mark">江</span><span>JIANGHU<small>江湖・世界指揮中心</small></span></a>
+   <div className="world-actions home-top-actions"><span className="mode-pill">SINGLE PLAYER</span><button onClick={()=>onStory(leaderName.trim()||"")}>故事篇章</button></div>
+  </header>
+  {!world?<section className="home-dashboard">
+   <div className="home-hero">
+    <div className="home-hero-copy"><div className="kicker">JIANGHU · WORLD COMMAND CENTER</div><h1>你的江湖，<em>由此開始。</em></h1><p>建立世界、經營組織、觀察勢力消長。每個世界都有獨立種子與長期存檔。</p>
+     <div className="home-hero-actions"><button className="primary" onClick={newGame}>建立新世界 <span>→</span></button>{worldLibrary[0]&&<button className="home-secondary" onClick={()=>loadRecord(worldLibrary[0])}>繼續上次遊戲</button>}</div>
+    </div>
+    <div className="home-seal"><span>TAIWAN</span><b>江湖</b><small>STRATEGY CHRONICLE</small></div>
+   </div>
+   <section className="home-kpis" aria-label="世界存檔概況">
+    <article><span>已保存世界</span><b>{worldLibrary.length.toString().padStart(2,"0")}</b><small>本機獨立存檔</small></article>
+    <article><span>最近遊玩天數</span><b>{worldLibrary[0]?.world.day??"—"}</b><small>{worldLibrary[0]?"最近世界進度":"尚無遊戲紀錄"}</small></article>
+    <article><span>主要 AI 勢力</span><b>08</b><small>動態世界生成</small></article>
+    <article><span>可探索地區</span><b>96</b><small>台灣 22 縣市</small></article>
+   </section>
+   <div className="home-section-heading"><div><div className="kicker">QUICK ACCESS</div><h2>遊戲入口</h2></div><span>選擇你的下一步</span></div>
+   <section className="home-action-grid">
+    <button className="home-action-card home-action-primary" onClick={newGame}><span className="home-action-icon">＋</span><b>建立新世界</b><small>生成全新勢力、人物與地方局勢</small><i>開始新篇章 →</i></button>
+    <button className="home-action-card" onClick={()=>worldLibrary[0]?loadRecord(worldLibrary[0]):setMessage("目前沒有可繼續的世界，請先建立新世界。")}><span className="home-action-icon">↗</span><b>繼續遊戲</b><small>載入最近一次遊玩的世界</small><i>{worldLibrary[0]?"第 "+worldLibrary[0].world.day+" 天":"尚無遊戲紀錄"}</i></button>
+    <button className="home-action-card" onClick={()=>document.getElementById("home-save-library")?.scrollIntoView({behavior:"smooth",block:"start"})}><span className="home-action-icon">▤</span><b>世界存檔</b><small>管理、載入與下載本機世界</small><i>{worldLibrary.length} 個已保存世界</i></button>
+    <button className="home-action-card" onClick={()=>onStory(leaderName.trim()||"") }><span className="home-action-icon">✦</span><b>故事篇章</b><small>進入人物故事與選擇劇情</small><i>故事模式 →</i></button>
+   </section>
+   <section className="home-new-world-panel">
+    <div><div className="kicker">WORLD GENERATOR</div><h2>自訂世界種子</h2><p>輸入固定種子可重現同一組世界生成結果；留空則自動產生。</p></div>
+    <div className="home-seed-form"><input aria-label="世界種子" value={seedInput} onChange={e=>setSeedInput(e.target.value.replace(/[^0-9]/g,"").slice(0,10))} placeholder="留空以自動產生" inputMode="numeric"/><button className="primary" onClick={newGame}>生成世界 →</button></div>
+   </section>
+   <section className="home-save-library" id="home-save-library">
+    <div className="home-section-heading"><div><div className="kicker">LOCAL WORLD LIBRARY</div><h2>我的世界存檔</h2></div><span>僅儲存在目前瀏覽器</span></div>
+    <div className="home-library-tools"><p>每個世界獨立保存。載入不會覆蓋其他世界；建議定期下載 JSON 備份以便跨裝置保存。</p><label className="import-save-button">匯入世界備份<input type="file" accept="application/json,.json" onChange={e=>importSave(e.target.files?.[0]??null)}/></label></div>
+    {worldLibrary.length>0?<div className="home-save-grid">{worldLibrary.map((record,index)=><article className={"home-save-card "+(index===0?"home-save-latest":"")} key={record.id}>
+      <div className="home-save-card-top"><span>{index===0?"最近遊玩":"已保存世界"}</span><small>種子 {record.world.seed}</small></div><h3>{record.world.name}</h3><p>第 {record.world.day} 天 · {record.world.player?.organizationName??"尚未建立玩家組織"}</p><small className="home-save-time">最後保存：{new Date(record.savedAt).toLocaleString()}</small>
+      <div className="home-save-actions"><button className="primary" onClick={()=>loadRecord(record)}>載入世界 →</button><button onClick={()=>downloadSave(record.world)}>下載備份</button></div>
+     </article>)}</div>:<div className="home-empty-saves"><b>尚未建立世界存檔</b><span>建立新世界後，系統會自動保存並顯示在這裡。</span></div>}
+   </section>
+   <footer className="home-footer"><span>JIANGHU · WORLD COMMAND CENTER</span><span>台灣架空策略世界 · 單人遊戲</span></footer>
+  </section>
   :<><section className="world-heading"><div><div className="kicker">WORLD SEED · {world.seed}</div><h1>{world.name}</h1><p>第 {world.day} 天 · 標準難度 · 虛擬台灣 · 初始局勢：{world.worldTendency??"動態形成"}</p></div><div className="world-heading-actions"><button onClick={()=>world&&saveAuto(world).then(()=>refreshSaves()).then(()=>setMessage("已立即自動保存。"))}>立即自動存檔</button><button onClick={()=>world&&downloadSave(world)}>下載世界備份</button><label className="import-save-button">匯入世界<input type="file" accept="application/json,.json" onChange={e=>importSave(e.target.files?.[0]??null)}/></label><button onClick={()=>setWorld(null)}>返回世界入口</button></div><div className="save-slot-actions">{Array.from({length:10},(_,i)=><button key={i} onClick={()=>save(i+1)}>儲存至 {String(i+1).padStart(2,"0")}</button>)}</div></section>
    <section className="command-bar"><div className="command-date"><b>第 {world.day} 天</b><span>{world.player?"組織經營中":"世界觀察模式"} · {world.worldTendency??"動態局勢"}</span></div><div className="command-resources">{(()=>{const p=world.playerStats??initialPlayerStats();return <><span>資金 <b>{p.cash}</b></span><span>聲望 <b>{p.reputation}</b></span><span>信任 <b>{p.trust}%</b></span><span>關注 <b>{p.publicPressure}%</b></span></>;})()}</div>{world.player&&<button className="primary" onClick={runDay}>推進下一天 →</button>}</section>
    <nav className="game-nav" aria-label="遊戲功能">{([{id:"overview",label:"世界總覽"},{id:"map",label:"地圖地盤"},{id:"factions",label:"勢力組織"},{id:"people",label:"人物名冊"},{id:"finance",label:"財務經營"},{id:"diplomacy",label:"外交關係"},{id:"events",label:"任務事件"},{id:"saves",label:"存檔管理"}] as const).map(tab=><button key={tab.id} className={activeTab===tab.id?"active":""} onClick={()=>setActiveTab(tab.id)}>{tab.label}</button>)}</nav>{activeTab==="overview"&&<>{overviewTop}<section className="world-stats"><div><span>地盤總數</span><b>{stats?.districts}</b></div><div><span>已有控制者</span><b>{stats?.controlled}</b></div><div><span>中立地盤</span><b>{stats?.neutral}</b></div><div><span>無主地盤</span><b>{stats?.unclaimed}</b></div><div><span>組織總數</span><b>{stats?.factions}</b></div></section>
