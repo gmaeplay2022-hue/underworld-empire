@@ -16,7 +16,20 @@ test("legacy world saves migrate to the current schema without losing the map",(
  assert.equal(migrated.people.length,migrated.factions.length);
  assert.ok(Array.isArray(migrated.events));
 });
-test("legacy character attributes migrate into the finalized six-value model",()=>{\n const world=createWorld(7070);\n const person=world.people[0];\n delete person.combat;delete person.intelligence;delete person.charisma;\n person.diplomacy=73;\n const migrated=migrateWorld(world);\n const restored=migrated.people.find(item=>item.id===person.id);\n assert.equal(restored.charisma,73);\n assert.equal(typeof restored.combat,"number");\n assert.equal(typeof restored.intelligence,"number");\n assert.equal(migrated.generatorVersion,"1.2.0");\n});\n\ntest("organic local organizations can emerge as a world advances",()=>{
+test("legacy character attributes migrate into the finalized six-value model",()=>{
+ const world=createWorld(7070);
+ const person=world.people[0];
+ delete person.combat;delete person.intelligence;delete person.charisma;
+ person.diplomacy=73;
+ const migrated=migrateWorld(world);
+ const restored=migrated.people.find(item=>item.id===person.id);
+ assert.equal(restored.charisma,73);
+ assert.equal(typeof restored.combat,"number");
+ assert.equal(typeof restored.intelligence,"number");
+ assert.equal(migrated.generatorVersion,"1.2.0");
+});
+
+test("organic local organizations can emerge as a world advances",()=>{
  const world=createWorld(8181);
  world.player={organizationName:"測試組織",leaderName:"測試領導",startDistrictId:world.districts[0].id};
  world.playerStats=initialPlayerStats();
