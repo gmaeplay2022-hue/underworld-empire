@@ -90,6 +90,24 @@ export function resolveDispute(world:WorldState,districtId:string):TurnResult{
  const msg=won?"協調結果有利：玩家組織取得「"+district.name+"」的主要管理權。":"協調未能取得共識：「"+district.name+"」的局勢更加緊張。";
  return {world:{...world,playerStats,districts,relationships,history:record(world,msg)},message:msg};
 }
+export function assignDistrictStaff(world:WorldState,districtId:string,personId:string|null,role:"manager"|"deputy"="manager"):TurnResult{
+ if(!world.player)return {world,message:"請先建立玩家組織。"};
+ const district=world.districts.find(d=>d.id===districtId);
+ if(!district||district.controllerId!=="player")return {world,message:"只能安排自己控制地盤的人員。"};
+ if(personId!==null){
+  const person=world.people.find(p=>p.id===personId&&p.factionId==="player"&&p.status==="active");
+  if(!person)return {world,message:"只能任命在任的組織成員。"};
+  const occupied=world.districts.find(d=>d.id!==districtId&&(d.managerPersonId===personId||(d.deputyPersonIds??[]).includes(personId)));
+  if(occupied)return {world,message:"此成員已派駐其他地盤，請先調整原職務。"};
+  if(role==="deputy"&&district.managerPersonId===personId)return {world,message:"地盤負責人不能同時擔任輔助幹部。"};
+  if(role==="manager"&&(district.deputyPersonIds??[]).includes(personId))return {world,message:"此成員目前是本地盤輔助幹部，請先解除輔助職務。"};
+ }
+ if(role==="deputy"&&personId&&(district.deputyPersonIds??[]).filter(id=>id!==personId).length>=2)return {world,message:"每個地盤最多安排兩名輔助幹部。"};
+ const districts=world.districts.map(d=>{if(d.id!==districtId)return d;if(role==="manager")return {...d,managerPersonId:personId};const deputies=(d.deputyPersonIds??[]).filter(id=>id!==personId);return {...d,deputyPersonIds:personId?[...deputies,personId]:deputies};});
+ const name=personId?world.people.find(p=>p.id===personId)?.name??"成員":"職務空缺";
+ const msg=(role==="manager"?"地盤負責人":"輔助幹部")+"已更新："+name+"。";
+ return {world:{...world,districts,history:record(world,msg)},message:msg};
+}
 export function developDistrict(world:WorldState,districtId:string):TurnResult{
  if(!world.player)return {world,message:"請先建立玩家組織。"};const district=world.districts.find(d=>d.id===districtId);if(!district||district.controllerId!=="player")return {world,message:"只能投資自己管理的地盤。"};
  const current=world.playerStats??initialPlayerStats();if(current.cash<18)return {world,message:"資金不足，需要 18 點建設資源。"};
