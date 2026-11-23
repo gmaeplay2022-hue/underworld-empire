@@ -6,7 +6,7 @@ export type WorldEvent = { id: string; day: number; category: "community" | "org
 export type District = { id: string; countyId: string; name: string; population: number; economy: number; development: number; stability: number; governmentAttention: number; controllerId: string | null; influences: Record<string, number>; status: "controlled" | "neutral" | "unclaimed"; reformStage?: "unmanaged" | "reforming" | "developing" | "established"; reformProgress?: number; localSupport?: number; recruitPool?: number; managerPersonId?: string | null; deputyPersonIds?: string[]; }
 export type Squad = { id:string; name:string; leaderPersonId:string; memberPersonIds:string[]; morale:number; locationDistrictId:string | null; purpose:"district"|"development"|"liaison" };
 export type PlayerStats = { cash: number; reputation: number; trust: number; publicPressure: number; dailyIncome: number; dailyUpkeep: number };
-export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string; birthplace?: string }; playerStats?: PlayerStats; schemaVersion: 2; generatorVersion: "1.0.0" | "1.1.0" | "1.2.0"; seed: number; name: string; day: number; difficulty: "standard"; worldTendency?: string; counties: County[]; factions: Faction[]; districts: District[]; people: Person[]; squads?: Squad[]; relationships: Relationship[]; events: WorldEvent[]; history: string[]; createdAt: string };
+export type WorldState = { player?: { organizationName: string; leaderName: string; startDistrictId: string; birthplace?: string }; playerStats?: PlayerStats; schemaVersion: 2; generatorVersion: "1.0.0" | "1.1.0" | "1.2.0" | "1.3.0"; seed: number; name: string; day: number; difficulty: "standard"; worldTendency?: string; counties: County[]; factions: Faction[]; districts: District[]; people: Person[]; squads?: Squad[]; relationships: Relationship[]; events: WorldEvent[]; history: string[]; createdAt: string };
 
 const countyRows: Array<[string,string,number,number,number]> = [
   ["taipei","台北市",3,9,2],["new-taipei","新北市",3,8,3],["keelung","基隆市",3,11,2],["taoyuan","桃園市",3,7,4],["hsinchu-city","新竹市",3,6,5],["hsinchu-county","新竹縣",3,8,5],
@@ -58,11 +58,11 @@ export function createWorld(seed:number,difficulty:"standard"="standard"):WorldS
  const order=shuffle(r,districts);const activeMajors=shuffle(r,factions.slice(0,8)).slice(0,6+Math.floor(r()*3));
  const headquarterDistricts:District[]=[];for(const faction of activeMajors){const home=shuffle(r,districts.filter(d=>d.countyId===faction.headquartersCountyId&&!d.controllerId))[0];if(home)headquarterDistricts.push(home);}
  headquarterDistricts.forEach((d,i)=>{const f=activeMajors[i];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=65+Math.floor(r()*26);});
- const remainingMajorDistricts=order.filter(d=>!d.controllerId).slice(0,Math.max(0,40-headquarterDistricts.length));
+ const remainingMajorDistricts=order.filter(d=>!d.controllerId).slice(0,Math.max(0,28-headquarterDistricts.length));
  remainingMajorDistricts.forEach((d,i)=>{const f=activeMajors[i%activeMajors.length];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=55+Math.floor(r()*36);});
  const remainingAfterMajor=shuffle(r,districts.filter(d=>!d.controllerId));
- remainingAfterMajor.slice(0,12).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
- remainingAfterMajor.slice(12,30).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
+ remainingAfterMajor.slice(0,8).forEach((d,i)=>{const f=factions[8+(i%localCount)];d.controllerId=f.id;d.status="controlled";d.influences[f.id]=50+Math.floor(r()*35);});
+ remainingAfterMajor.slice(8,26).forEach(d=>{d.status="neutral";d.stability=65+Math.floor(r()*30);});
  for(const d of districts){if(d.controllerId){for(const f of shuffle(r,factions.filter(f=>f.id!==d.controllerId)).slice(0,1+Math.floor(r()*2)))d.influences[f.id]=8+Math.floor(r()*24);}}
  const people:Person[]=[];
  for(const f of factions){const leader=makePerson(r,"person-"+f.id+"-leader",f.id,"領導者",38+Math.floor(r()*24),"family-"+f.id);people.push(leader);const cadreCount=2+Math.floor(r()*2);for(let i=0;i<cadreCount;i++)people.push(makePerson(r,"person-"+f.id+"-cadre-"+(i+1),f.id,"核心幹部",29+Math.floor(r()*27),"family-"+f.id));const memberCount=3+Math.floor(r()*3);for(let i=0;i<memberCount;i++)people.push(makePerson(r,"person-"+f.id+"-member-"+(i+1),f.id,"重要成員",22+Math.floor(r()*35),"family-"+f.id));}
@@ -71,7 +71,7 @@ export function createWorld(seed:number,difficulty:"standard"="standard"):WorldS
  institutionRoles.forEach((role,i)=>people.push(makePerson(r,"person-institution-"+(i+1),"institution-"+(i+1),role,40+Math.floor(r()*20),"family-institution-"+(i+1))));
  const relations=factions.flatMap((f,i)=>factions.slice(i+1).map(other=>{let score=Math.floor(r()*61)-30;const sameRegion=f.headquartersCountyId===other.headquartersCountyId;if(sameRegion)score-=12;const businessPair=["商業勢力","產業勢力"].includes(f.archetype)&&["商業勢力","產業勢力"].includes(other.archetype);if(businessPair)score+=18;score=Math.max(-85,Math.min(85,score));return {fromFactionId:f.id,toFactionId:other.id,score,status:(score>=65?"allied":score>=30?"friendly":score<=-65?"hostile":score<=-30?"rival":"neutral") as Relationship["status"]};}));
  const events:WorldEvent[]=[{id:"event-1",day:1,category:"community",title:"新局勢形成",description:"各地地方網絡開始觀察新世界的變化，新的合作與競爭關係逐漸浮現。"}];
- return {schemaVersion:2,generatorVersion:"1.2.0",seed,name:"江湖世界・"+seed,day:1,difficulty,worldTendency:pick(r,tendencies),counties,factions,districts,people,relationships:relations,events,history:["世界建立：八大核心勢力、地方網絡與重要人物已依世界種子形成初始局勢。"],createdAt:new Date().toISOString()};
+ return {schemaVersion:2,generatorVersion:"1.3.0",seed,name:"江湖世界・"+seed,day:1,difficulty,worldTendency:pick(r,tendencies),counties,factions,districts,people,relationships:relations,events,history:["世界建立：八大核心勢力、地方網絡與重要人物已依世界種子形成初始局勢。"],createdAt:new Date().toISOString()};
 }
 export function seedFromNow(){return (Date.now() ^ Math.floor(Math.random()*0xffffffff))>>>0;}
 export function countWorld(world:WorldState){return {districts:world.districts.length,controlled:world.districts.filter(d=>d.controllerId).length,neutral:world.districts.filter(d=>d.status==="neutral").length,unclaimed:world.districts.filter(d=>d.status==="unclaimed").length,factions:world.factions.length};}
