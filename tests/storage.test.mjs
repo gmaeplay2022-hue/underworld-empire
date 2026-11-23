@@ -11,7 +11,7 @@ test("portable JSON export round-trips a complete Jianghu world", () => {
   assert.equal(restored.day, world.day);
   assert.equal(restored.factions.length, world.factions.length);
   assert.equal(restored.people.length, world.people.length);
-  assert.equal(restored.districts.length, 96);
+  assert.equal(restored.districts.length, 66);
 });
 
 test("legacy raw world JSON remains importable", () => {

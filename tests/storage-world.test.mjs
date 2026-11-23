@@ -12,7 +12,7 @@ test("legacy world saves migrate to the current schema without losing the map",(
  const migrated=migrateWorld(legacy);
  assert.equal(migrated.schemaVersion,2);
  assert.equal(migrated.generatorVersion,"1.0.0");
- assert.equal(migrated.districts.length,96);
+ assert.equal(migrated.districts.length,legacy.districts.length);
  assert.equal(migrated.people.length,migrated.factions.length);
  assert.ok(Array.isArray(migrated.events));
 });
@@ -26,7 +26,7 @@ test("legacy character attributes migrate into the finalized six-value model",()
  assert.equal(restored.charisma,73);
  assert.equal(typeof restored.combat,"number");
  assert.equal(typeof restored.intelligence,"number");
- assert.equal(migrated.generatorVersion,"1.2.0");
+ assert.equal(migrated.generatorVersion,"1.3.0");
 });
 
 test("organic local organizations can emerge as a world advances",()=>{

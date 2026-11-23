@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { COUNTY_DEFINITIONS, INITIAL_DISTRICT_COUNT, createWorld, countWorld } from "../src/game/world.ts";
 
-test("the fixed virtual Taiwan contains 22 counties and exactly 96 districts", () => {
+test("the fixed virtual Taiwan contains 22 counties and exactly 66 districts", () => {
   assert.equal(COUNTY_DEFINITIONS.length, 22);
-  assert.equal(INITIAL_DISTRICT_COUNT, 96);
-  assert.equal(COUNTY_DEFINITIONS.reduce((sum, county) => sum + county.districts, 0), 96);
+  assert.equal(INITIAL_DISTRICT_COUNT, 66);
+  assert.equal(COUNTY_DEFINITIONS.reduce((sum, county) => sum + county.districts, 0), 66);
 });
 
 test("the same world seed reproduces the same factions and district state", () => {
@@ -18,10 +18,10 @@ test("the same world seed reproduces the same factions and district state", () =
 test("balanced generation creates controlled, neutral and unclaimed land", () => {
   const world = createWorld(20261122);
   const counts = countWorld(world);
-  assert.equal(counts.districts, 96);
-  assert.equal(counts.controlled, 52);
+  assert.equal(counts.districts, 66);
+  assert.equal(counts.controlled, 36);
   assert.equal(counts.neutral, 18);
-  assert.equal(counts.unclaimed, 26);
+  assert.equal(counts.unclaimed, 12);
 });
 
 test("all eight major AI factions exist, while only a subset starts with territory", () => {
@@ -62,9 +62,9 @@ test("V1.1 generates the approved eight faction archetypes and complete characte
     assert.ok(faction.headquartersCountyId);
   }
   assert.ok(["商業競逐型","地方派系型","產業發展型","權力競爭型","外來勢力型"].includes(world.worldTendency));
-  assert.equal(world.generatorVersion, "1.2.0");
+  assert.equal(world.generatorVersion, "1.3.0");
   for (const person of world.people) {
-    for (const key of ["combat","intelligence","leadership","charisma","management","loyalty"]) {
+    for (const key of ["combat","intelligence","leadership","charisma","management","prestige","loyalty"]) {
       assert.ok(Number.isInteger(person[key]) && person[key] >= 0 && person[key] <= 100, `${key} must be 0-100`);
     }
   }
@@ -73,9 +73,9 @@ test("V1.1 generates the approved eight faction archetypes and complete characte
 test("V1.1 preserves balanced territory counts and places active major factions at their headquarters", () => {
   const world = createWorld(20261122);
   const counts = countWorld(world);
-  assert.equal(counts.controlled, 52);
+  assert.equal(counts.controlled, 36);
   assert.equal(counts.neutral, 18);
-  assert.equal(counts.unclaimed, 26);
+  assert.equal(counts.unclaimed, 12);
   for (const faction of world.factions.filter(item => item.isMajor)) {
     if (world.districts.some(district => district.controllerId === faction.id)) {
       assert.ok(world.districts.some(district => district.controllerId === faction.id && district.countyId === faction.headquartersCountyId));

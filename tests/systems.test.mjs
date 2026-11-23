@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { advanceDay, assignDistrictStaff, claimDistrict, negotiate, recruitLocalMembers, recruitPerson, reformDistrict, resolveDispute, developDistrict, resolveWorldEvent, initialPlayerStats } from "../src/game/turn.ts";
+import { advanceDay, assignDistrictStaff, claimDistrict, negotiate, recruitLocalMembers, recruitPerson, reformDistrict, resolveDispute, developDistrict, resolveWorldEvent, initialPlayerStats, createSquad } from "../src/game/turn.ts";
 import { createWorld } from "../src/game/world.ts";
 
 function startedWorld(){
@@ -165,4 +165,22 @@ test("weekly territory competition can transfer control using influence and loca
  const settled=settleTerritoryCompetition(world,world.districts,world.factions,7);
  assert.equal(settled.districts.find(d=>d.id===district.id).controllerId,"player");
  assert.ok(settled.events.some(e=>e.title==="地盤影響力與控制關係變動"));
+});
+
+
+test("new worlds use 66 territories across 22 counties and generate six core character attributes",()=>{
+ const world=createWorld(20261123);
+ assert.equal(world.counties.length,22);
+ assert.equal(world.districts.length,66);
+ assert.ok(world.people.every(p=>Number.isFinite(p.prestige)&&p.prestige>=1&&p.prestige<=100));
+});
+
+test("player can form a squad from unassigned members",()=>{
+ const world=startedWorld();
+ world.people.push({id:"squad-member-a",name:"隊員甲",age:27,factionId:"player",familyId:"f-a",generation:1,parentIds:[],role:"地方成員",combat:50,intelligence:50,leadership:55,charisma:50,management:50,prestige:70,loyalty:80,health:100,status:"active"});
+ world.people.push({id:"squad-member-b",name:"隊員乙",age:29,factionId:"player",familyId:"f-b",generation:1,parentIds:[],role:"地方成員",combat:55,intelligence:55,leadership:60,charisma:50,management:50,prestige:65,loyalty:90,health:100,status:"active"});
+ const result=createSquad(world,"新豐小隊");
+ assert.equal(result.world.squads.length,1);
+ assert.equal(result.world.squads[0].name,"新豐小隊");
+ assert.ok(result.world.squads[0].memberPersonIds.length>=2);
 });

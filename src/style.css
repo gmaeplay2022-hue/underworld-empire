@@ -253,3 +253,17 @@ button{font:inherit}.shell{max-width:1180px;margin:auto;padding:0 34px}.topbar{h
 .territory-staff select{width:100%;min-width:0;background:#171614;border:1px solid #ffffff24;color:#e8ded2;padding:10px;font:inherit}
 .territory-deputies{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media(max-width:600px){.territory-deputies{grid-template-columns:1fr}}
+
+/* V3 territory-first strategy home */
+.home-hero{background:linear-gradient(115deg,#211c17ed,#171513e8),repeating-linear-gradient(135deg,transparent 0 42px,#ffffff05 43px 44px);}
+.home-dashboard{max-width:1180px;margin:0 auto;padding:28px 34px 48px;}
+.home-hero h1{letter-spacing:1px;}
+.home-kpis article{background:#1b1916;border:1px solid #ffffff16;}
+.home-action-card{min-height:142px;}
+.home-strategy-intro{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin:22px 0;}
+.home-strategy-intro article{background:#1b1916;border:1px solid #ffffff16;padding:20px;}
+.home-strategy-intro h3{margin:0 0 8px;color:#e8d8c7;font-size:17px;}
+.home-strategy-intro p{margin:0;color:#9e968b;font-size:12px;line-height:1.8;}
+.home-loop{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
+.home-loop span{padding:10px;background:#26211b;border:1px solid #ffffff12;color:#d6b18b;font-size:11px;text-align:center;}
+@media(max-width:760px){.home-dashboard{padding:18px 16px 36px}.home-strategy-intro{grid-template-columns:1fr}.home-loop{grid-template-columns:repeat(2,1fr)}}
