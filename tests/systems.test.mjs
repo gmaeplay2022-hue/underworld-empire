@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { advanceDay, claimDistrict, negotiate, recruitPerson, resolveDispute, developDistrict, resolveWorldEvent, initialPlayerStats } from "../src/game/turn.ts";
+import { advanceDay, claimDistrict, negotiate, recruitLocalMembers, recruitPerson, reformDistrict, resolveDispute, developDistrict, resolveWorldEvent, initialPlayerStats } from "../src/game/turn.ts";
 import { createWorld } from "../src/game/world.ts";
 
 function startedWorld(){
@@ -79,4 +79,25 @@ test("high public pressure raises government attention in player districts",()=>
  const before=district.governmentAttention;
  const result=advanceDay(world);
  assert.equal(result.world.districts.find(d=>d.id===district.id).governmentAttention,Math.min(100,before+2));
+});
+
+test("district reform advances through stages and improves local support",()=>{
+ const world=startedWorld();const district=world.districts.find(d=>d.controllerId==="player");
+ const first=reformDistrict(world,district.id);
+ const afterFirst=first.world.districts.find(d=>d.id===district.id);
+ assert.equal(afterFirst.reformStage,"reforming");assert.equal(afterFirst.reformProgress,1);
+ assert.ok(afterFirst.localSupport>0);assert.equal(first.world.playerStats.cash,104);
+ let next=first.world;for(let i=0;i<3;i++)next=reformDistrict(next,district.id).world;
+ const mature=next.districts.find(d=>d.id===district.id);
+ assert.equal(mature.reformStage,"established");assert.equal(mature.reformProgress,4);
+});
+test("local members can be recruited only after district reform",()=>{
+ const world=startedWorld();const district=world.districts.find(d=>d.controllerId==="player");
+ const blocked=recruitLocalMembers(world,district.id);assert.match(blocked.message,/先完成/);
+ const reformed=reformDistrict(world,district.id).world;
+ const before=reformed.people.filter(p=>p.factionId==="player").length;
+ const result=recruitLocalMembers(reformed,district.id);
+ assert.ok(result.world.people.filter(p=>p.factionId==="player").length>before);
+ assert.ok(result.world.people.some(p=>p.role==="地方成員"));
+ assert.equal(result.world.playerStats.cash,92);
 });
