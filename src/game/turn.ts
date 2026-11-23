@@ -100,6 +100,7 @@ export function assignDistrictStaff(world:WorldState,districtId:string,personId:
   const occupied=world.districts.find(d=>d.id!==districtId&&(d.managerPersonId===personId||(d.deputyPersonIds??[]).includes(personId)));
   if(occupied)return {world,message:"此成員已派駐其他地盤，請先調整原職務。"};
   if(role==="deputy"&&district.managerPersonId===personId)return {world,message:"地盤負責人不能同時擔任輔助幹部。"};
+  if(role==="deputy"&&(district.deputyPersonIds??[]).includes(personId))return {world,message:"此成員已是本地盤輔助幹部。"};
   if(role==="manager"&&(district.deputyPersonIds??[]).includes(personId))return {world,message:"此成員目前是本地盤輔助幹部，請先解除輔助職務。"};
  }
  if(role==="deputy"&&personId&&(district.deputyPersonIds??[]).filter(id=>id!==personId).length>=2)return {world,message:"每個地盤最多安排兩名輔助幹部。"};
