@@ -10,7 +10,7 @@ function startedWorld(){
  world.player={organizationName:"測試組織",leaderName:"測試領導者",startDistrictId:district.id};
  world.playerStats=initialPlayerStats();
  world.factions.push({id:"player",name:"測試組織",archetype:"玩家組織",description:"測試",strength:60,founded:2026,isMajor:false,cohesion:70,treasury:120});
- world.people.push({id:"player-leader",name:"測試領導者",age:29,factionId:"player",role:"組織領導者",leadership:80,management:75,diplomacy:70,loyalty:100,health:100,status:"active"});
+ world.people.push({id:"player-leader",name:"測試領導者",age:29,factionId:"player",role:"組織領導者",combat:65,intelligence:75,leadership:80,charisma:70,management:75,loyalty:100,health:100,status:"active"});
  world.relationships=world.factions.filter(f=>f.id!=="player").map(f=>({fromFactionId:"player",toFactionId:f.id,score:0,status:"neutral"}));
  return world;
 }
@@ -36,7 +36,7 @@ test("players can negotiate and improve faction relations",()=>{
  const world=startedWorld();const faction=world.factions.find(f=>f.id!=="player");
  const result=negotiate(world,faction.id);
  const relation=result.world.relationships.find(r=>[r.fromFactionId,r.toFactionId].includes("player")&&[r.fromFactionId,r.toFactionId].includes(faction.id));
- assert.equal(relation.score,12);
+ assert.equal(relation.score,14);
  assert.equal(result.world.playerStats.cash,115);
 });
 test("players can recruit key staff and invest in controlled districts",()=>{
