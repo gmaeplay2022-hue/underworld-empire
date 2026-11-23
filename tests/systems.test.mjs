@@ -121,3 +121,24 @@ test("district staff management and leadership improve daily income and stabilit
  assert.ok(result.world.playerStats.cash>=beforeCash+Math.floor(district.economy*.025)+3);
  assert.ok(result.world.districts.find(d=>d.id===district.id).stability>=beforeStability);
 });
+
+test("AI factions autonomously make bounded weekly development decisions",()=>{
+ const world=startedWorld();world.day=6;
+ const ai=world.factions.find(f=>f.id!=="player");ai.treasury=100;
+ const owned=world.districts.find(d=>d.controllerId===ai.id);
+ if(owned)owned.managerPersonId=null;
+ const beforeTreasury=ai.treasury;
+ const result=advanceDay(world);
+ const updated=result.world.factions.find(f=>f.id===ai.id);
+ assert.ok(updated.treasury<=beforeTreasury);
+ assert.ok(updated.treasury>=0);
+ assert.ok(result.world.events.some(e=>e.day===7&&e.title==="勢力自主發展"));
+});
+test("AI weekly decisions are deterministic for the same world seed and state",()=>{
+ const world=startedWorld();world.day=6;
+ const first=advanceDay(structuredClone(world)).world;
+ const second=advanceDay(structuredClone(world)).world;
+ assert.deepEqual(first.factions,second.factions);
+ assert.deepEqual(first.districts,second.districts);
+ assert.deepEqual(first.events,second.events);
+});
