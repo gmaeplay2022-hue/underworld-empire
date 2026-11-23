@@ -62,7 +62,12 @@ test("V1.1 generates the approved eight faction archetypes and complete characte
     assert.ok(faction.headquartersCountyId);
   }
   assert.ok(["商業競逐型","地方派系型","產業發展型","權力競爭型","外來勢力型"].includes(world.worldTendency));
-  assert.equal(world.generatorVersion, "1.2.0");\n  for (const person of world.people) {\n    for (const key of ["combat","intelligence","leadership","charisma","management","loyalty"]) {\n      assert.ok(Number.isInteger(person[key]) && person[key] >= 0 && person[key] <= 100, `${key} must be 0-100`);\n    }\n  }
+  assert.equal(world.generatorVersion, "1.2.0");
+  for (const person of world.people) {
+    for (const key of ["combat","intelligence","leadership","charisma","management","loyalty"]) {
+      assert.ok(Number.isInteger(person[key]) && person[key] >= 0 && person[key] <= 100, `${key} must be 0-100`);
+    }
+  }
 });
 
 test("V1.1 preserves balanced territory counts and places active major factions at their headquarters", () => {
