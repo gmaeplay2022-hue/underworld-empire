@@ -53,3 +53,26 @@ button{font:inherit}.shell{max-width:1180px;margin:auto;padding:0 34px}.topbar{h
 .event-choices{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .event-choices button{padding:7px 9px;background:#302820;border:1px solid #9a754f;color:#e8c9a5;border-radius:5px;font-size:10px;cursor:pointer}
 .event-choices button:hover{background:#493827}
+
+
+/* V1.0 strategy command-center layout */
+.command-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 18px;margin:18px 0 12px;background:linear-gradient(110deg,#241e18,#171614);border:1px solid #ffffff18}
+.command-date{display:flex;flex-direction:column;gap:4px;min-width:115px}.command-date b{font:600 19px Oswald;color:#e7d5c2}.command-date span{font-size:10px;color:#8f877d}
+.command-resources{display:flex;gap:22px;flex-wrap:wrap}.command-resources span{font-size:11px;color:#a99e91}.command-resources b{font:600 16px Oswald;color:#d6a06b;margin-left:5px}
+.game-nav{display:flex;gap:6px;overflow-x:auto;padding:8px 0 14px;border-bottom:1px solid #ffffff18;margin-bottom:18px;scrollbar-width:thin}
+.game-nav button{flex:0 0 auto;background:#1c1a17;border:1px solid #ffffff18;color:#a99e91;padding:10px 15px;font-size:12px;cursor:pointer;transition:.18s}
+.game-nav button:hover,.game-nav button.active{background:#35271d;border-color:#a8784d;color:#f0c18e}
+.overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:16px}
+.overview-card{background:linear-gradient(145deg,#211e1a,#181715);border:1px solid #ffffff16;padding:18px;min-width:0}
+.overview-card .section-head{margin-bottom:14px}.overview-card p{font-size:12px;color:#b9afa3;line-height:1.8;min-height:36px}
+.overview-card>button{background:#29231d;border:1px solid #775537;color:#d5a16c;padding:8px 12px;font-size:11px;cursor:pointer}
+.overview-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 16px}
+.overview-kpis div{display:flex;flex-direction:column;gap:3px}.overview-kpis b{font:600 22px Oswald;color:#e7d5c2}.overview-kpis span{font-size:10px;color:#887e72}
+.world-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:30px 0 12px}
+.world-heading h1{font-size:clamp(26px,4vw,38px);margin:8px 0}.world-heading p{font-size:12px;color:#9d9387}
+.world-heading-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.world-heading-actions button,.world-heading-actions label{font-size:11px}
+.world-stats{margin:0 0 16px}
+.world-message{position:fixed;right:22px;bottom:20px;z-index:20;max-width:min(420px,calc(100vw - 32px));background:#30251c;border:1px solid #986c43;color:#f1d4b2;padding:12px 16px;box-shadow:0 10px 30px #0008;font-size:12px}
+.save-manager{margin-top:10px}
+@media(max-width:850px){.overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.command-bar{align-items:flex-start;flex-wrap:wrap}.command-resources{gap:12px}}
+@media(max-width:580px){.overview-grid{grid-template-columns:1fr}.command-resources{display:grid;grid-template-columns:repeat(2,1fr);width:100%}.command-bar>.primary{width:100%}.world-heading-actions{justify-content:flex-start}.game-nav button{padding:9px 11px}.overview-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
