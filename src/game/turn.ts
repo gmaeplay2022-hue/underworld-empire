@@ -211,7 +211,7 @@ export function createSquad(world:WorldState,name:string):TurnResult{
  const available=roster.filter(p=>!assigned.has(p.id));
  if(available.length<2)return {world,message:"至少需要兩名尚未編組的在任成員。"};
  const members=available.slice(0,Math.min(5,available.length));
- const leader=[...members].sort((a,b)=>(b.leadership+b.prestige??b.charisma)-(a.leadership+a.prestige??a.charisma))[0];
+ const leader=[...members].sort((a,b)=>(b.leadership+(b.prestige??b.charisma))-(a.leadership+(a.prestige??a.charisma)))[0];
  const squad:Squad={id:"squad-"+world.day+"-"+((world.squads??[]).length+1),name:name.trim()||"地方行動小隊 "+((world.squads??[]).length+1),leaderPersonId:leader.id,memberPersonIds:members.map(p=>p.id),morale:Math.round(members.reduce((n,p)=>n+p.loyalty,0)/members.length),locationDistrictId:world.player.startDistrictId,purpose:"district"};
  const msg="已編成「"+squad.name+"」，由 "+leader.name+" 擔任隊長，共 "+members.length+" 人。隊伍可用於抽象地盤管理、地方發展與協調任務。";
  return {world:{...world,squads:[...(world.squads??[]),squad],history:[msg,...world.history].slice(0,150)},message:msg};
