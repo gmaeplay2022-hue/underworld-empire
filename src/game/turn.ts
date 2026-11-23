@@ -1,4 +1,5 @@
 import type { Person, Relationship, WorldEvent, WorldState } from "./world";
+import { settleTerritoryCompetition } from "./competition.ts";
 export type PolicyAction = "community" | "governance" | "development";
 export type TurnResult = { world: WorldState; message: string };
 const clamp=(n:number,min=0,max=100)=>Math.max(min,Math.min(max,n));
@@ -86,6 +87,9 @@ export function advanceDay(world:WorldState):TurnResult{
   for(const other of factions.filter(f=>f.id!==id))relationships.push({fromFactionId:id,toFactionId:other.id,score:0,status:"neutral"});
   generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","新興地方網絡成立",name+"由地方社群逐步凝聚成形，成為新的世界參與者。"));
  }
+ const competition=settleTerritoryCompetition(world,districts,factions,day);
+ districts.splice(0,districts.length,...competition.districts);
+ generatedEvents.push(...competition.events);
  if(day%7===0){const stable=districts.filter(d=>d.stability>=65).length;generatedEvents.push({...event({...world,day,events:[...world.events,...generatedEvents]},"community","地方週報","本週共有 "+stable+" 個地盤維持穩定。地方社群邀請你的組織參與公共活動。"),choices:[{id:"support",label:"投入社區活動（12）"},{id:"organize",label:"召開內部協調（8）"},{id:"decline",label:"婉拒邀請"}],resolved:false});}
  if(day%365===0)generatedEvents.push(event({...world,day,events:[...world.events,...generatedEvents]},"organization","年度人事檢視","新的一年開始，各組織重新評估幹部責任與長期接班安排。"));
  const history=generatedEvents.reduce((h,e)=>[e.title+"："+e.description,...h].slice(0,150),record(world,"第 "+day+" 天結算：收入 "+income+"、維持支出 "+upkeep+"，可用資金 "+cash+"。"));

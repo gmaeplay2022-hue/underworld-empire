@@ -142,3 +142,27 @@ test("AI weekly decisions are deterministic for the same world seed and state",(
  assert.deepEqual(first.districts,second.districts);
  assert.deepEqual(first.events,second.events);
 });
+
+import { getOrganizationTier, settleTerritoryCompetition, tierCapacity } from "../src/game/competition.ts";
+
+test("organization tiers rise with controlled mature territories and roster",()=>{
+ const world=startedWorld();const faction=world.factions.find(f=>f.id==="player");
+ const tiers=["地方小組織","地方勢力","區域勢力","跨縣市勢力","大型組織"];
+ const initialTier=getOrganizationTier(world,"player");
+ for(const d of world.districts.filter(d=>d.controllerId==="player")){d.reformProgress=4;d.reformStage="established";d.localSupport=90;d.managerPersonId="player-leader";}
+ for(let i=0;i<12;i++)world.people.push({id:"tier-"+i,name:"成員"+i,age:30,factionId:"player",role:"核心幹部",combat:50,intelligence:60,leadership:60,charisma:60,management:70,loyalty:85,health:100,status:"active"});
+ faction.treasury=500;
+ const upgradedTier=getOrganizationTier(world,"player");
+ assert.ok(tiers.indexOf(upgradedTier)>tiers.indexOf(initialTier), `expected tier growth from ${initialTier} to ${upgradedTier}`);
+ assert.ok(tierCapacity(getOrganizationTier(world,"player"))>=2);
+});
+test("weekly territory competition can transfer control using influence and local support",()=>{
+ const world=startedWorld();world.day=7;
+ const district=world.districts.find(d=>d.controllerId==="major-1")??world.districts.find(d=>d.controllerId!=="player");
+ const ai=world.factions.find(f=>f.id===district.controllerId);ai.strength=15;
+ const player=world.factions.find(f=>f.id==="player");player.strength=100;
+ district.influences.player=100;district.localSupport=95;district.stability=50;
+ const settled=settleTerritoryCompetition(world,world.districts,world.factions,7);
+ assert.equal(settled.districts.find(d=>d.id===district.id).controllerId,"player");
+ assert.ok(settled.events.some(e=>e.title==="地盤影響力與控制關係變動"));
+});
