@@ -138,3 +138,74 @@ button{font:inherit}.shell{max-width:1180px;margin:auto;padding:0 34px}.topbar{h
 .home-footer{margin-top:38px;padding-top:17px;border-top:1px solid #ffffff13;display:flex;justify-content:space-between;gap:12px;color:#665e55;font:9px Oswald;letter-spacing:1.3px}
 @media(max-width:900px){.home-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.home-dashboard{max-width:100%}}
 @media(max-width:620px){.home-shell{padding:0 14px 32px}.home-top{height:68px}.home-top-actions .mode-pill{display:none}.home-hero{min-height:0;margin:20px 0 13px;padding:25px 20px}.home-seal{width:76px;height:76px;flex-basis:76px;outline-offset:4px}.home-seal span,.home-seal small{font-size:6px;letter-spacing:1px}.home-seal b{font-size:22px;margin:4px 0}.home-hero h1{font-size:34px;margin:12px 0 8px}.home-hero p{font-size:11px}.home-hero-actions{margin-top:17px}.home-hero-actions button{min-width:0;flex:1;padding:11px 9px;font-size:10px}.home-kpis{gap:7px;margin-bottom:28px}.home-kpis article{padding:12px}.home-kpis article b{font-size:24px}.home-section-heading h2{font-size:18px}.home-action-grid{gap:7px}.home-action-card{min-height:155px;padding:12px}.home-action-card b{font-size:12px}.home-action-card small{font-size:9px}.home-new-world-panel{margin:20px 0 28px;padding:15px;display:grid}.home-seed-form{min-width:0;width:100%}.home-library-tools{align-items:flex-start;flex-direction:column}.home-save-grid{grid-template-columns:1fr}.home-footer{flex-direction:column}.home-save-actions button{flex:1}}
+
+/* V1.3 grand strategy command interface */
+.world-shell{max-width:1480px;padding-left:clamp(16px,3vw,42px);padding-right:clamp(16px,3vw,42px)}
+.world-top{position:sticky;top:0;z-index:30;background:#11100fee;backdrop-filter:blur(14px)}
+.world-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;padding:30px 0 18px}
+.world-heading>div:first-child{min-width:0}
+.world-heading-actions{justify-content:flex-end;flex-wrap:wrap}
+.save-slot-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px;padding-top:8px;border-top:1px solid #ffffff12}
+.save-slot-actions button{background:#1d1a17;border:1px solid #ffffff1c;color:#bcae9e;padding:7px 10px;font-size:10px;cursor:pointer}
+.command-bar{position:sticky;top:76px;z-index:20;display:flex;align-items:center;gap:22px;padding:13px 18px;margin:10px 0 15px;background:linear-gradient(100deg,#292119,#1b1916);border:1px solid #8b633e66;box-shadow:0 8px 25px #0005}
+.command-date{display:flex;flex-direction:column;gap:3px;min-width:155px}
+.command-date b{font-size:17px;color:#e8d5c1}
+.command-date span{font-size:10px;color:#9c8e7e}
+.command-resources{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,2vw,28px);margin-left:auto;flex-wrap:wrap}
+.command-resources span{font-size:11px;color:#a99d90;white-space:nowrap}
+.command-resources b{font:600 20px Oswald;color:#d6a16f;margin-left:5px}
+.command-bar>.primary{white-space:nowrap;padding:12px 17px}
+.game-nav{position:sticky;top:145px;z-index:19;display:flex;gap:5px;overflow-x:auto;padding:8px 0 12px;margin:0 0 18px;background:#11100ff2;backdrop-filter:blur(12px);border-bottom:1px solid #ffffff18;scrollbar-width:thin}
+.game-nav button{flex:0 0 auto;padding:11px 15px;border:1px solid #ffffff19;background:#1b1916;color:#a99e91;font-size:11px;cursor:pointer;transition:.18s}
+.game-nav button:hover{border-color:#936b47;color:#e8d5c1}
+.game-nav button.active{background:#3a2b1e;border-color:#b27c4c;color:#e7b37f;box-shadow:inset 0 -2px #c18b58}
+.overview-grid{gap:12px}
+.overview-card,.map-panel,.district-panel,.faction-panel,.turn-panel{border-color:#ffffff1c;background:linear-gradient(145deg,#1d1b18,#171614);box-shadow:0 12px 32px #0002}
+.overview-card{padding:20px}
+.world-stats{gap:9px}
+.world-stats>div{padding:16px;background:linear-gradient(145deg,#24201b,#191816);border-color:#ffffff17}
+.world-stats b{font-size:28px}
+.faction-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:11px}
+.faction-grid>article{padding:17px;background:linear-gradient(145deg,#24211d,#1a1917);border:1px solid #ffffff17;min-width:0}
+.faction-grid>article>b{font-size:14px;color:#eadbc9}
+.faction-grid>article>span{display:block;color:#c08a58;font-size:10px;margin:7px 0}
+.faction-grid>article>p{font-size:11px;line-height:1.8;color:#a69b8e}
+.faction-grid>article>small{display:block;font-size:10px;line-height:1.8;color:#82796e}
+.people-management{padding:22px}
+.people-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:18px 0 12px;flex-wrap:wrap}
+.people-toolbar>input{flex:1 1 260px;min-width:0;max-width:460px;background:#100f0e;border:1px solid #ffffff25;color:#eee;padding:12px 14px;font:12px 'Noto Sans TC';outline:none}
+.people-toolbar>input:focus{border-color:#b27c4c}
+.people-filters{display:flex;gap:6px;flex-wrap:wrap}
+.people-filters button{padding:9px 12px;background:#211e1a;border:1px solid #ffffff20;color:#a99e91;font-size:10px;cursor:pointer}
+.people-filters button.active{background:#3a2b1e;border-color:#b27c4c;color:#e7b37f}
+.people-summary{display:flex;justify-content:space-between;gap:10px;margin:12px 0;color:#887e72;font-size:10px}
+.people-summary b{color:#d6a16f}
+.people-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,255px),1fr));gap:10px}
+.person-card{display:flex;flex-direction:column;align-items:stretch;gap:9px;text-align:left;min-width:0;padding:16px;background:linear-gradient(145deg,#25211c,#1a1917);border:1px solid #ffffff18;color:#e8e3dc;cursor:pointer;transition:border-color .18s,transform .18s}
+.person-card:hover{border-color:#a9794e;transform:translateY(-2px)}
+.person-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.person-card-top b{font-size:15px}
+.person-card-top i{font-style:normal;color:#8eaa83;font-size:9px;border:1px solid #61755766;padding:3px 7px}
+.person-role{font-size:10px;color:#c08a58}
+.person-faction{font-size:10px;color:#bcb1a4;padding-bottom:8px;border-bottom:1px solid #ffffff12}
+.person-statline{font-size:10px;color:#a99f93;letter-spacing:.2px}
+.person-skills{font-size:10px;color:#84796d;line-height:1.7}
+.person-open{margin-top:3px;padding-top:9px;border-top:1px solid #ffffff12;color:#c18b58;font-size:10px}
+.map-layout{grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:16px}
+.county-map{grid-template-rows:repeat(15,clamp(26px,3vw,38px));gap:5px}
+.county-tile b{font-size:clamp(8px,.8vw,11px)}
+.district-list{max-height:430px;overflow:auto;padding-right:4px}
+.district-row{padding:11px 9px}
+.event-feed article{padding:15px 4px;border-bottom:1px solid #ffffff12}
+.event-feed article b{display:block;margin:5px 0;color:#e1d2c1}
+.event-feed article p{font-size:11px;line-height:1.8;color:#a69b8e}
+.turn-panel{padding:22px}
+.turn-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+.turn-metrics>div{padding:14px;background:#211e1a;border:1px solid #ffffff12}
+.turn-metrics span{font-size:10px;color:#94897d}
+.turn-metrics b{display:block;font:600 24px Oswald;color:#d6a16f;margin-top:6px}
+.turn-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.turn-actions button:not(.primary){padding:10px 13px;background:#25211c;border:1px solid #ffffff22;color:#c9b9a6;font-size:10px;cursor:pointer}
+.world-message{position:fixed;z-index:60;bottom:20px;left:50%;transform:translateX(-50%);max-width:min(620px,calc(100vw - 32px));padding:13px 20px;background:#2b2119;border:1px solid #a8784d;color:#e5c6a5;box-shadow:0 10px 35px #0008;font-size:12px;line-height:1.7}
+@media(max-width:900px){.world-heading{grid-template-columns:1fr}.world-heading-actions{justify-content:flex-start}.save-slot-actions{grid-column:auto}.command-bar{top:68px;gap:12px;flex-wrap:wrap}.game-nav{top:142px}.map-layout{grid-template-columns:1fr}.district-list{max-height:300px}}
+@media(max-width:620px){.world-shell{padding-left:12px;padding-right:12px}.world-top{height:66px}.world-heading{padding:22px 0 14px}.world-heading-actions{gap:6px}.world-heading-actions button,.world-heading-actions .import-save-button{font-size:9px;padding:7px}.save-slot-actions button{font-size:9px;padding:7px}.command-bar{top:66px;padding:10px;gap:8px}.command-date{min-width:90px}.command-date b{font-size:14px}.command-resources{justify-content:flex-start;gap:10px;margin-left:0;flex:1}.command-resources span{font-size:9px}.command-resources b{font-size:16px}.command-bar>.primary{margin-left:auto;padding:9px;font-size:9px}.game-nav{top:136px}.game-nav button{padding:9px 11px;font-size:10px}.people-management{padding:14px}.people-summary{flex-direction:column}.people-grid{grid-template-columns:1fr}.world-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.turn-actions button{flex:1 1 42%}.county-map{grid-template-rows:repeat(15,25px);gap:3px;padding:4px}.county-tile{padding:1px}.county-tile b{font-size:7px}.county-tile small{font-size:6px}.faction-grid{grid-template-columns:1fr}}
