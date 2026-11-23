@@ -1,5 +1,5 @@
 import type { Person, Relationship, WorldEvent, WorldState } from "./world";
-import { settleTerritoryCompetition } from "./competition";
+import { settleTerritoryCompetition } from "./competition.ts";
 export type PolicyAction = "community" | "governance" | "development";
 export type TurnResult = { world: WorldState; message: string };
 const clamp=(n:number,min=0,max=100)=>Math.max(min,Math.min(max,n));
